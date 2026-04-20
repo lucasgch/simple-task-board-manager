@@ -74,9 +74,8 @@ O projeto evoluiu de uma arquitetura simples para uma solução robusta e escal�
 ### Evolução da Arquitetura
 
 #### **Fase 1: Fundação Sólida**
-- **JDBC → JPA/Hibernate**: Migração para mapeamento objeto-relacional moderno
+- **HibernateJDBC → JPA**: Estrutura de banco de dados simplificada
 - **Entidades JPA**: Modelo de dados limpo com anotações (`@Entity`, `@Id`, `@OneToMany`)
-- **Serviços Transacionais**: Gerenciamento automático de transações com `@Transactional`
 
 #### **Fase 2: Spring Boot Integration**
 - **Injeção de Dependência**: Spring gerencia o ciclo de vida dos componentes
