@@ -1,7 +1,7 @@
 import java.io.File
 
 // Constante centralizada para a versão da aplicação
-val appVersion = "1.4.0"
+val appVersion = "1.4.1"
 
 val platform = when {
     org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
@@ -20,12 +20,12 @@ val javafxOsClassifier = when {
 }
 
 plugins {
-    id("org.springframework.boot") version "3.2.5"
-    id("io.spring.dependency-management") version "1.1.5"
+    id("org.springframework.boot") version "3.5.2"
+    id("io.spring.dependency-management") version "1.1.7"
     id("java")
-    id("application")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("io.freefair.lombok") version "8.4"
+    //id("application") - removido para teste de problema no shadow
+    id("io.github.goooler.shadow") version "8.1.8"
+    id("io.freefair.lombok") version "9.5.0"
 }
 
 group = "org.desviante"
@@ -37,8 +37,11 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }
 
 // A exclusão do commons-logging continua sendo uma boa prática.
@@ -53,7 +56,7 @@ configurations.all {
 
 dependencies {
 
-    val javafxVersion = "21.0.4"
+    val javafxVersion = "25.0.3"
     val javafxOsClassifier = when {
         org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
         org.gradle.internal.os.OperatingSystem.current().isLinux -> "linux"
@@ -120,12 +123,12 @@ dependencies {
     testImplementation("org.openjfx:javafx-fxml:$javafxVersion:$javafxOsClassifier")
 }
 
-application {
-    // A classe de entrada para o usuário final continua a mesma.
-    mainClass.set("org.desviante.SimpleTaskBoardManagerApplication")
-    applicationDefaultJvmArgs = listOf(
-        "--add-opens=com.fasterxml.jackson.databind/com.fasterxml.jackson.databind=com.google.http.client.jackson2"
-    )
+tasks.shadowJar {
+    mergeServiceFiles()
+    archiveClassifier.set("all")
+    manifest {
+        attributes["Main-Class"] = "org.desviante.SimpleTaskBoardManagerApplication"
+    }
 }
 
 // Configuração do Spring Boot

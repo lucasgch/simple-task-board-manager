@@ -87,6 +87,12 @@ O projeto evoluiu de uma arquitetura simples para uma solução robusta e escal�
 - **Padrão Observer**: Comunicação desacoplada entre componentes via callbacks
 - **UX Aprimorada**: Edição in-place, drag & drop, feedback visual
 
+#### **Fase 4: Atualização para o Java 25**
+- A atualização do Java 21 para o Java 25 gerou um desafio técnico interessante, além de atualizar versão da JDK utilizada no projeto, foi necessário atualizar a versão das bibliotecas utilizadas, tais como:
+- JavaFx atualizada para versão 25.0.3.
+- Gradle atualizado para versão 9.6.0.
+- Atualizada a versão do shadow e do lombok.
+
 ### Benefícios da Arquitetura Atual
 
 - **🔧 Manutenibilidade**: Código organizado e fácil de manter
@@ -165,8 +171,8 @@ git clone https://github.com/lgjor/simple-task-board-manager.git
 ./gradlew run
 
 # Ou compile e execute
-./gradlew build
-java -jar build/libs/simple-task-board-manager-1.0.0-all.jar
+./gradlew bootRun
+java -jar build/libs/board-1.4.1-app.jar
 ```
 
 ## <div id="changelog">📋 Changelog</div>
