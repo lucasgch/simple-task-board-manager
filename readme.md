@@ -168,10 +168,9 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 git clone https://github.com/lgjor/simple-task-board-manager.git
 
 # Execute com Gradle
-./gradlew run
+./gradlew bootRun
 
 # Ou compile e execute
-./gradlew bootRun
 java -jar build/libs/board-1.4.1-app.jar
 ```
 
