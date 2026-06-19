@@ -164,7 +164,7 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 
 ### Desenvolvimento
 ```bash
-# Clone o repositório
+# Clone o repositório*/import org.springframework.boot.test.mock.mockito.MockBean;
 git clone https://github.com/lgjor/simple-task-board-manager.git
 
 # Execute com Gradle
