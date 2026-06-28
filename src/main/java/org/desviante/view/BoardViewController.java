@@ -38,7 +38,6 @@ import java.net.URISyntaxException;
 import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.desviante.util.WindowManager;
-import org.desviante.view.PreferencesController;
 import org.springframework.context.event.EventListener;
 import org.desviante.event.PreferencesUpdatedEvent;
 import lombok.extern.slf4j.Slf4j;
