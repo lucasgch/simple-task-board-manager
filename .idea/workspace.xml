@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b78907ab-aa34-4801-8b43-a5a76adf664c" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/desviante/model/Fields.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,6 +31,13 @@
       </state>
     </system>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -45,6 +54,69 @@
   }
 }</component>
   <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.14.3-bin/cv11ve7ro1n3o1j4so8xd9n66/gradle-8.14.3" javaHome="/usr/lib/jvm/default-java" gradleVersion="8.14.3" />
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0000004108484941" />
+      <entry key="S2" value="1.0837630576719695" />
+      <entry key="S5" value="2.088894215104959" />
+      <entry key="S10" value="4.167215501890038" />
+      <entry key="S30" value="8.751754625771465" />
+      <entry key="S60" value="10.98015865230357" />
+      <entry key="M2" value="12.374054075262183" />
+      <entry key="M5" value="13.319230345388819" />
+      <entry key="M10" value="13.654320914895186" />
+      <entry key="M15" value="13.768353163957704" />
+      <entry key="M30" value="13.883575058882611" />
+      <entry key="H1" value="13.941636305063888" />
+      <entry key="H2" value="13.970780240451475" />
+      <entry key="H4" value="13.985380628923732" />
+      <entry key="D1" value="13.99756211878868" />
+      <entry key="W1" value="13.99965169892981" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.18301071199320318" />
+      <entry key="MS500" value="0.7120255067465423" />
+      <entry key="S2" value="1.0022619612918056" />
+      <entry key="S5" value="2.054663363271655" />
+      <entry key="S10" value="4.1482114740252864" />
+      <entry key="S30" value="8.74353041904502" />
+      <entry key="S60" value="10.975533714969991" />
+      <entry key="M2" value="12.371576252697178" />
+      <entry key="M5" value="13.318193682500493" />
+      <entry key="M10" value="13.653794453322082" />
+      <entry key="M15" value="13.768000340715126" />
+      <entry key="M30" value="13.883397712081385" />
+      <entry key="H1" value="13.941547395832865" />
+      <entry key="H2" value="13.970735726622182" />
+      <entry key="H4" value="13.985358357173508" />
+      <entry key="D1" value="13.997558404767076" />
+      <entry key="W1" value="13.999651168304734" />
+    </decayedShown>
+  </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 1
@@ -56,6 +128,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
@@ -151,6 +224,10 @@
       <updated>1753614120146</updated>
       <workItem from="1781897699827" duration="2118000" />
       <workItem from="1781899978130" duration="1455000" />
+      <workItem from="1781902062440" duration="86000" />
+      <workItem from="1782047621020" duration="539000" />
+      <workItem from="1782647043458" duration="149000" />
+      <workItem from="1782647206769" duration="215000" />
     </task>
     <servers />
   </component>
