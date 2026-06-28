@@ -75,7 +75,6 @@ O projeto evoluiu de uma arquitetura simples para uma solução robusta e escal�
 
 #### **Fase 1: Fundação Sólida**
 - **HibernateJDBC → JPA**: Estrutura de banco de dados simplificada
-- **Entidades JPA**: Modelo de dados limpo com anotações (`@Entity`, `@Id`, `@OneToMany`)
 
 #### **Fase 2: Spring Boot Integration**
 - **Injeção de Dependência**: Spring gerencia o ciclo de vida dos componentes
@@ -167,10 +166,7 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 # Clone o repositório
 git clone https://github.com/lgjor/simple-task-board-manager.git
 
-# Execute com Gradle
-./gradlew run
-
-# Ou compile e execute
+# Compile e execute
 ./gradlew bootRun
 java -jar build/libs/board-1.4.1-app.jar
 ```
