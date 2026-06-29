@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +36,8 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(classes = IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.main.allow-bean-definition-overriding=true",
-    "google.api.enabled=false"
+    "google.api.enabled=false",
+    "spring.liquibase.enabled=false"
 })
 class SimpleIntegrationTest {
     
@@ -51,8 +53,10 @@ class SimpleIntegrationTest {
     @Autowired
     private CalendarSyncObserver calendarSyncObserver;
     
+    @MockBean
     private TaskService mockTaskService;
-    
+
+    @MockBean
     private CalendarService mockCalendarService;
     
     @BeforeEach
