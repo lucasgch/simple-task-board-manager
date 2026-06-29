@@ -14,7 +14,7 @@ import org.desviante.model.enums.FieldType;
  *   <li><strong>Label:</strong> Nome descritivo do campo (ex: "Progresso de Leitura")</li>
  *   <li><strong>Total:</strong> Quantidade total de unidades (ex: 300 páginas)</li>
  *   <li><strong>Current:</strong> Quantidade atual completada (ex: 150 páginas)</li>
- *   <li><strong>Unit:</strong> Unidade de medida (ex: "páginas", "minutos", "capítulos")</li>
+ *   <li><strong>Description:</strong> Descrição opcional exibida abaixo do título</li>
  *   <li><strong>Cálculo Automático:</strong> Percentual calculado dinamicamente</li>
  * </ul>
  *
@@ -24,9 +24,9 @@ import org.desviante.model.enums.FieldType;
  * readingProgress.setLabel("Progresso de Leitura");
  * readingProgress.setTotal(300);
  * readingProgress.setCurrent(150);
- * readingProgress.setUnit("páginas");
+ * readingProgress.setDescription("capítulos concluídos");
  * // getProgressPercentage() retorna 50.0
- * // getDisplayText() retorna "Progresso de Leitura: 150/300 páginas (50.0%)"
+ * // getDisplayText() retorna "Progresso de Leitura: 150/300 (50.0%)"
  * </pre>
  *
  * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lucasgch">GitHub</a>
@@ -56,10 +56,9 @@ public class PercentageField extends Field {
     private Integer current;
 
     /**
-     * Unidade de medida.
-     * Exemplo: "páginas", "minutos", "capítulos", "exercícios".
+     * Descrição opcional exibida abaixo do título do campo.
      */
-    private String unit;
+    private String description;
 
     /**
      * Construtor padrão que inicializa o campo como tipo PERCENTAGE.
@@ -76,16 +75,16 @@ public class PercentageField extends Field {
      * Construtor que inicializa o campo com todos os dados principais.
      *
      * @param label label descritivo do campo
-     * @param total quantidade total de unidades
+     * @param total quantidade total
      * @param current quantidade atual completada
-     * @param unit unidade de medida
+     * @param description descrição opcional exibida abaixo do título
      */
-    public PercentageField(String label, Integer total, Integer current, String unit) {
+    public PercentageField(String label, Integer total, Integer current, String description) {
         this();
         this.label = label;
         this.total = total;
         this.current = current;
-        this.unit = unit;
+        this.description = description;
     }
 
     /**
@@ -96,11 +95,10 @@ public class PercentageField extends Field {
      */
     @Override
     public String getDisplayText() {
-        return String.format("%s: %d/%d %s (%.1f%%)",
+        return String.format("%s: %d/%d (%.1f%%)",
                 label != null ? label : "Progresso",
                 current != null ? current : 0,
                 total != null ? total : 0,
-                unit != null ? unit : "unidades",
                 getProgressPercentage());
     }
 
@@ -188,21 +186,21 @@ public class PercentageField extends Field {
     }
 
     /**
-     * Retorna a unidade de medida.
+     * Retorna a descrição opcional do campo.
      *
-     * @return unidade de medida, ou null se não foi definido
+     * @return descrição, ou null se não foi definida
      */
-    public String getUnit() {
-        return unit;
+    public String getDescription() {
+        return description;
     }
 
     /**
-     * Define a unidade de medida.
+     * Define a descrição opcional exibida abaixo do título do campo.
      *
-     * @param unit unidade de medida a ser definida
+     * @param description descrição a ser definida
      */
-    public void setUnit(String unit) {
-        this.unit = unit;
+    public void setDescription(String description) {
+        this.description = description;
         touch();
     }
 
@@ -243,7 +241,7 @@ public class PercentageField extends Field {
                 ", label='" + label + '\'' +
                 ", total=" + total +
                 ", current=" + current +
-                ", unit='" + unit + '\'' +
+                ", description='" + description + '\'' +
                 ", progress=" + getProgressPercentage() + "%" +
                 '}';
     }

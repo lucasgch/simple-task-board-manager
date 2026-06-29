@@ -370,6 +370,23 @@ public class TaskManagerFacade {
                 request.progressType()
         );
 
+        // Criar campos iniciais conforme o tipo de progresso escolhido
+        if (request.progressType() != null) {
+            switch (request.progressType()) {
+                case PERCENTAGE -> fieldService.createPercentageField(newCard.getId(), "Progresso", 100, "", 0);
+                case CHECKLIST  -> {
+                    var group = fieldService.createChecklistGroup(newCard.getId(), "Checklist", 0);
+                    fieldService.createChecklistItemInGroup(newCard.getId(), group.getId(), "Item 1", 0);
+                }
+                case TOTAL      -> {
+                    fieldService.createPercentageField(newCard.getId(), "Progresso", 100, "", 0);
+                    var group = fieldService.createChecklistGroup(newCard.getId(), "Checklist", 1);
+                    fieldService.createChecklistItemInGroup(newCard.getId(), group.getId(), "Item 1", 0);
+                }
+                default -> {} // NONE, CUSTOM: sem campos iniciais
+            }
+        }
+
         // Obter o tipo da coluna para incluir no DTO
         BoardColumn column = columnService.getColumnById(request.parentColumnId())
                 .orElseThrow(() -> new ResourceNotFoundException("Coluna com ID " + request.parentColumnId() + " não encontrada."));

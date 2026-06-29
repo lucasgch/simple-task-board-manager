@@ -72,7 +72,7 @@ public class FieldRepository {
         FieldType type = FieldType.valueOf(typeStr);
 
         return switch (type) {
-            case CHECKLIST_ITEM -> mapChecklistField(rs);
+            case CHECKLIST_GROUP, CHECKLIST_ITEM -> mapChecklistField(rs);
             case PERCENTAGE -> mapPercentageField(rs);
         };
     };
@@ -89,6 +89,7 @@ public class FieldRepository {
         mapCommonFields(field, rs);
 
         field.setText(rs.getString("CHECKLIST_TEXT"));
+        field.setDescription(rs.getString("CHECKLIST_DESCRIPTION"));
         field.setCompleted(rs.getBoolean("CHECKLIST_COMPLETED"));
 
         Timestamp completedAt = rs.getTimestamp("CHECKLIST_COMPLETED_AT");
@@ -119,7 +120,7 @@ public class FieldRepository {
         int current = rs.getInt("PERCENTAGE_CURRENT");
         field.setCurrent(rs.wasNull() ? 0 : current);
 
-        field.setUnit(rs.getString("PERCENTAGE_UNIT"));
+        field.setDescription(rs.getString("PERCENTAGE_DESCRIPTION"));
 
         return field;
     }
@@ -135,6 +136,8 @@ public class FieldRepository {
         field.setId(rs.getLong("ID"));
         field.setCardId(rs.getLong("CARD_ID"));
         field.setOrderIndex(rs.getInt("ORDER_INDEX"));
+        long parentId = rs.getLong("PARENT_FIELD_ID");
+        field.setParentFieldId(rs.wasNull() ? null : parentId);
 
         Timestamp createdAt = rs.getTimestamp("CREATED_AT");
         if (createdAt != null) {
@@ -171,21 +174,25 @@ public class FieldRepository {
     private ChecklistField saveChecklistField(ChecklistField field) {
         final String sql = """
             INSERT INTO fields (card_id, field_type, order_index, created_at, updated_at,
-                               checklist_text, checklist_completed, checklist_completed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                               checklist_text, checklist_description, checklist_completed, checklist_completed_at,
+                               parent_field_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         var keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             var ps = connection.prepareStatement(sql, new String[]{"ID"});
             ps.setLong(1, field.getCardId());
-            ps.setString(2, FieldType.CHECKLIST_ITEM.name());
+            ps.setString(2, field.getFieldType().name());
             ps.setInt(3, field.getOrderIndex() != null ? field.getOrderIndex() : 0);
             ps.setTimestamp(4, Timestamp.valueOf(field.getCreatedAt()));
             ps.setTimestamp(5, Timestamp.valueOf(field.getUpdatedAt()));
             ps.setString(6, field.getText());
-            ps.setBoolean(7, field.getCompleted() != null ? field.getCompleted() : false);
-            ps.setTimestamp(8, field.getCompletedAt() != null ? Timestamp.valueOf(field.getCompletedAt()) : null);
+            ps.setString(7, field.getDescription());
+            ps.setBoolean(8, field.getCompleted() != null ? field.getCompleted() : false);
+            ps.setTimestamp(9, field.getCompletedAt() != null ? Timestamp.valueOf(field.getCompletedAt()) : null);
+            if (field.getParentFieldId() != null) ps.setLong(10, field.getParentFieldId());
+            else ps.setNull(10, java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
 
@@ -202,7 +209,7 @@ public class FieldRepository {
     private PercentageField savePercentageField(PercentageField field) {
         final String sql = """
             INSERT INTO fields (card_id, field_type, order_index, created_at, updated_at,
-                               percentage_label, percentage_total, percentage_current, percentage_unit)
+                               percentage_label, percentage_total, percentage_current, percentage_description)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -217,7 +224,7 @@ public class FieldRepository {
             ps.setString(6, field.getLabel());
             ps.setInt(7, field.getTotal() != null ? field.getTotal() : 0);
             ps.setInt(8, field.getCurrent() != null ? field.getCurrent() : 0);
-            ps.setString(9, field.getUnit());
+            ps.setString(9, field.getDescription());
             return ps;
         }, keyHolder);
 
@@ -250,13 +257,14 @@ public class FieldRepository {
     private boolean updateChecklistField(ChecklistField field) {
         String sql = """
             UPDATE fields
-            SET checklist_text = ?, checklist_completed = ?, checklist_completed_at = ?,
+            SET checklist_text = ?, checklist_description = ?, checklist_completed = ?, checklist_completed_at = ?,
                 order_index = ?, updated_at = ?
             WHERE id = ?
             """;
 
         int rowsAffected = jdbcTemplate.update(sql,
                 field.getText(),
+                field.getDescription(),
                 field.getCompleted(),
                 field.getCompletedAt() != null ? Timestamp.valueOf(field.getCompletedAt()) : null,
                 field.getOrderIndex(),
@@ -274,7 +282,7 @@ public class FieldRepository {
         String sql = """
             UPDATE fields
             SET percentage_label = ?, percentage_total = ?, percentage_current = ?,
-                percentage_unit = ?, order_index = ?, updated_at = ?
+                percentage_description = ?, order_index = ?, updated_at = ?
             WHERE id = ?
             """;
 
@@ -282,7 +290,7 @@ public class FieldRepository {
                 field.getLabel(),
                 field.getTotal(),
                 field.getCurrent(),
-                field.getUnit(),
+                field.getDescription(),
                 field.getOrderIndex(),
                 Timestamp.valueOf(field.getUpdatedAt()),
                 field.getId()
@@ -335,6 +343,20 @@ public class FieldRepository {
     public List<Field> findByCardId(Long cardId) {
         String sql = "SELECT * FROM fields WHERE CARD_ID = ? ORDER BY ORDER_INDEX";
         return jdbcTemplate.query(sql, fieldRowMapper, cardId);
+    }
+
+    public List<Field> findGroupsByCardId(Long cardId) {
+        String sql = "SELECT * FROM fields WHERE CARD_ID = ? AND FIELD_TYPE = 'CHECKLIST_GROUP' ORDER BY ORDER_INDEX";
+        return jdbcTemplate.query(sql, fieldRowMapper, cardId);
+    }
+
+    public List<Field> findByParentFieldId(Long parentFieldId) {
+        String sql = "SELECT * FROM fields WHERE PARENT_FIELD_ID = ? ORDER BY ORDER_INDEX";
+        return jdbcTemplate.query(sql, fieldRowMapper, parentFieldId);
+    }
+
+    public int deleteByParentFieldId(Long parentFieldId) {
+        return jdbcTemplate.update("DELETE FROM fields WHERE PARENT_FIELD_ID = ?", parentFieldId);
     }
 
     /**

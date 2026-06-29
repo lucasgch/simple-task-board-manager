@@ -213,6 +213,37 @@ public class FieldService {
         return fieldRepository.countByCardId(cardId);
     }
 
+    @Transactional
+    public ChecklistField createChecklistGroup(Long cardId, String name, int orderIndex) {
+        ChecklistField group = new ChecklistField(name);
+        group.setFieldType(FieldType.CHECKLIST_GROUP);
+        group.setCardId(cardId);
+        group.setOrderIndex(orderIndex);
+        return (ChecklistField) fieldRepository.save(group);
+    }
+
+    @Transactional
+    public ChecklistField createChecklistItemInGroup(Long cardId, Long groupId, String text, int orderIndex) {
+        ChecklistField item = new ChecklistField(text);
+        item.setCardId(cardId);
+        item.setParentFieldId(groupId);
+        item.setOrderIndex(orderIndex);
+        return (ChecklistField) fieldRepository.save(item);
+    }
+
+    public List<Field> getChecklistGroupsByCardId(Long cardId) {
+        return fieldRepository.findGroupsByCardId(cardId);
+    }
+
+    public List<Field> getChecklistItemsByGroupId(Long groupId) {
+        return fieldRepository.findByParentFieldId(groupId);
+    }
+
+    public void deleteChecklistGroup(Long groupId) {
+        fieldRepository.deleteByParentFieldId(groupId);
+        fieldRepository.deleteById(groupId);
+    }
+
     /**
      * Factory method: Cria um novo campo de checklist associado a um card.
      *
@@ -242,13 +273,13 @@ public class FieldService {
      *
      * @param cardId identificador do card
      * @param label label descritivo do campo (ex: "Progresso de Leitura")
-     * @param total quantidade total de unidades
-     * @param unit unidade de medida (ex: "páginas", "minutos")
+     * @param total quantidade total
+     * @param description descrição opcional exibida abaixo do título
      * @param orderIndex posição do campo na lista
      * @return PercentageField criado e persistido
      */
     @Transactional
-    public PercentageField createPercentageField(Long cardId, String label, Integer total, String unit, int orderIndex) {
+    public PercentageField createPercentageField(Long cardId, String label, Integer total, String description, int orderIndex) {
         if (cardId == null) {
             throw new IllegalArgumentException("ID do card não pode ser nulo");
         }
@@ -259,7 +290,7 @@ public class FieldService {
             throw new IllegalArgumentException("Total deve ser um número positivo");
         }
 
-        PercentageField field = new PercentageField(label, total, 0, unit);
+        PercentageField field = new PercentageField(label, total, 0, description);
         field.setCardId(cardId);
         field.setOrderIndex(orderIndex);
 

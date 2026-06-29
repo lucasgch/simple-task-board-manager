@@ -17,6 +17,8 @@ public enum FieldType {
      * <p>Representa um item que pode ser marcado como concluído/pendente.
      * Útil para listas de tarefas e sub-tarefas dentro de um card.</p>
      */
+    CHECKLIST_GROUP("Grupo de Checklist"),
+
     CHECKLIST_ITEM("Item de Checklist"),
 
     /**

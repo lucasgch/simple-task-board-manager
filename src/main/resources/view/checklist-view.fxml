@@ -7,32 +7,39 @@
 <VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.desviante.view.component.ChecklistViewController"
       fx:id="checklistContainer" spacing="8" styleClass="checklist-container">
-    
-    <!-- Cabeçalho do Checklist -->
-    <HBox spacing="8" alignment="CENTER_LEFT" styleClass="checklist-header">
-        <Label text="📋 Checklist" styleClass="checklist-title"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="progressLabel" text="0/0" styleClass="checklist-progress"/>
-    </HBox>
-    
+
+    <!-- Cabeçalho do Checklist (clique duplo para editar) -->
+    <VBox fx:id="headerPane" styleClass="checklist-header" spacing="2">
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Label fx:id="groupNameLabel" text="Checklist" styleClass="checklist-title"/>
+            <TextField fx:id="groupNameField" promptText="Nome do checklist" styleClass="checklist-title-field" HBox.hgrow="ALWAYS" visible="false" managed="false"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="progressLabel" text="0/0" styleClass="checklist-progress"/>
+        </HBox>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Label fx:id="groupDescLabel" text="" styleClass="checklist-description" wrapText="true"/>
+            <TextField fx:id="groupDescField" promptText="Descrição (opcional)" styleClass="checklist-description-field" HBox.hgrow="ALWAYS" visible="false" managed="false"/>
+        </HBox>
+    </VBox>
+
     <!-- Lista de Itens -->
     <VBox fx:id="itemsContainer" spacing="4" styleClass="checklist-items">
         <!-- Os itens serão adicionados dinamicamente aqui -->
     </VBox>
-    
+
     <!-- Campo para Adicionar Novo Item -->
     <HBox spacing="8" alignment="CENTER_LEFT" styleClass="add-item-container">
-                <TextField fx:id="newItemTextField" promptText="Adicionar novo item..." 
+        <TextField fx:id="newItemTextField" promptText="Adicionar novo item..."
                    styleClass="new-item-input" HBox.hgrow="ALWAYS"/>
-                <Button fx:id="addItemButton" text="+" styleClass="add-item-button"/>
+        <Button fx:id="addItemButton" text="+" styleClass="add-item-button"/>
     </HBox>
-    
+
     <!-- Botões de Ação -->
     <HBox spacing="8" alignment="CENTER" styleClass="checklist-actions">
-        <Button fx:id="clearCompletedButton" text="- Concluídos" 
+        <Button fx:id="clearCompletedButton" text="- Concluídos"
                 styleClass="clear-completed-button"/>
-        <Button fx:id="removeAllButton" text="- Todos" 
+        <Button fx:id="removeAllButton" text="- Checklist"
                 styleClass="remove-all-button"/>
     </HBox>
-    
+
 </VBox>
