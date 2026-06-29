@@ -318,7 +318,9 @@ public class FieldService {
             return 0.0;
         }
 
-        List<Field> fields = fieldRepository.findByCardId(cardId);
+        List<Field> fields = fieldRepository.findByCardId(cardId).stream()
+                .filter(f -> f.getFieldType() != FieldType.CHECKLIST_GROUP)
+                .toList();
 
         if (fields.isEmpty()) {
             return 0.0;
@@ -386,7 +388,9 @@ public class FieldService {
             return false;
         }
 
-        List<Field> fields = fieldRepository.findByCardId(cardId);
+        List<Field> fields = fieldRepository.findByCardId(cardId).stream()
+                .filter(f -> f.getFieldType() != FieldType.CHECKLIST_GROUP)
+                .toList();
 
         if (fields.isEmpty()) {
             return true; // Sem campos = considerado completo

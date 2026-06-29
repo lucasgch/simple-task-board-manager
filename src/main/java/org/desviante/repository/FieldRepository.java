@@ -88,6 +88,11 @@ public class FieldRepository {
         ChecklistField field = new ChecklistField();
         mapCommonFields(field, rs);
 
+        String fieldTypeStr = rs.getString("FIELD_TYPE");
+        if (fieldTypeStr != null) {
+            field.setFieldType(org.desviante.model.enums.FieldType.valueOf(fieldTypeStr));
+        }
+
         field.setText(rs.getString("CHECKLIST_TEXT"));
         field.setDescription(rs.getString("CHECKLIST_DESCRIPTION"));
         field.setCompleted(rs.getBoolean("CHECKLIST_COMPLETED"));

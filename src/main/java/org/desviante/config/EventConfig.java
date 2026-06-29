@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.desviante.integration.event.EventPublisher;
 import org.desviante.integration.observer.CalendarSyncObserver;
+import org.desviante.integration.observer.CardCompletionUIObserver;
 import org.desviante.integration.observer.CardProgressCompletionObserver;
 import org.desviante.integration.observer.GoogleTasksSyncObserver;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,7 @@ public class EventConfig {
     private final GoogleTasksSyncObserver googleTasksSyncObserver;
     private final CalendarSyncObserver calendarSyncObserver;
     private final CardProgressCompletionObserver cardProgressCompletionObserver;
+    private final CardCompletionUIObserver cardCompletionUIObserver;
     
     /**
      * Registra automaticamente os observers no EventPublisher quando o contexto Spring é inicializado.
@@ -52,6 +54,10 @@ public class EventConfig {
             // Registrar CardProgressCompletionObserver
             eventPublisher.subscribe(cardProgressCompletionObserver);
             log.info("✅ CardProgressCompletionObserver registrado com sucesso");
+
+            // Registrar CardCompletionUIObserver
+            eventPublisher.subscribe(cardCompletionUIObserver);
+            log.info("✅ CardCompletionUIObserver registrado com sucesso");
 
             log.info("🎉 Todos os observers foram registrados com sucesso! Total: {}", eventPublisher.getObserverCount());
 

@@ -68,6 +68,9 @@ public class BoardViewController {
     @Autowired
     private WindowManager windowManager;
 
+    @Autowired
+    private org.desviante.integration.observer.UIEventBridge uiEventBridge;
+
     // --- Componentes da Tabela de Boards ---
     @FXML
     private TableView<BoardSummaryDTO> boardsTableView;
@@ -162,6 +165,7 @@ public class BoardViewController {
     @FXML
     public void initialize() {
         System.out.println("BoardViewController inicializado.");
+        uiEventBridge.setOnCardAutoCompleted(this::reloadCurrentKanban);
         setupBoardsTable();
         setupGroupFilter();
         setupStatusFilter();
@@ -610,28 +614,33 @@ public class BoardViewController {
         }
     }
 
+    private void reloadCurrentKanban() {
+        BoardSummaryDTO current = boardsTableView.getSelectionModel().getSelectedItem();
+        Long currentId = current != null ? current.id() : null;
+        loadBoards();
+        if (currentId == null) return;
+        for (int i = 0; i < boardsTableView.getItems().size(); i++) {
+            if (boardsTableView.getItems().get(i).id().equals(currentId)) {
+                boardsTableView.getSelectionModel().select(i);
+                boardsTableView.scrollTo(i);
+                break;
+            }
+        }
+    }
+
     private void handleCardUpdate(Long cardId, UpdateCardDetailsDTO updatedDetails) {
         System.out.println("Atualizando detalhes para o card ID: " + cardId);
         
         // Se updatedDetails for null, significa que o card foi deletado ou apenas movido
         if (updatedDetails == null) {
             System.out.println("Card ID " + cardId + " foi deletado ou movido - recarregando interface");
-
-            // Recarregar a interface para refletir mudanças de posição ou deleção
-            BoardSummaryDTO selectedBoard = boardsTableView.getSelectionModel().getSelectedItem();
-            if (selectedBoard != null) {
-                loadKanbanViewForBoard(selectedBoard.id());
-                loadBoards();
-            }
+            reloadCurrentKanban();
             return;
         }
-        
+
         try {
             facade.updateCardDetails(cardId, updatedDetails);
-            BoardSummaryDTO selectedBoard = boardsTableView.getSelectionModel().getSelectedItem();
-            if (selectedBoard != null) {
-                loadKanbanViewForBoard(selectedBoard.id());
-            }
+            reloadCurrentKanban();
         } catch (Exception e) {
             e.printStackTrace();
             showError("Erro ao Atualizar", "Não foi possível salvar as alterações do card: " + e.getMessage());
