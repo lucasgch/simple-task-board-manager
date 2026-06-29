@@ -119,7 +119,7 @@ class DefaultConfigurationServiceTest {
             defaultConfigurationService.setDefaultProgressType(ProgressType.CHECKLIST);
         });
 
-        String expectedMessage = "Não é possível alterar o tipo de progresso padrão 'Percentual' pois ele está sendo usado por cards no sistema. Migre os cards para outro tipo de progresso antes de alterar a configuração padrão.";
+        String expectedMessage = "Não é possível alterar o tipo de progresso padrão 'Percentual (Campos Percentuais)' pois ele está sendo usado por cards no sistema. Migre os cards para outro tipo de progresso antes de alterar a configuração padrão.";
         assertEquals(expectedMessage, exception.getMessage());
 
         // Verify

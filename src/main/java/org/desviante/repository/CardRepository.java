@@ -58,7 +58,7 @@ public class CardRepository {
         this.simpleJdbcTemplate = new JdbcTemplate(dataSource);
         this.jdbcInsert = new SimpleJdbcInsert(dataSource)
                 .withTableName("cards")
-                .usingColumns("title", "description", "card_type_id", "total_units", "current_units", "progress_type", "creation_date", "last_update_date", "completion_date", "scheduled_date", "due_date", "board_column_id", "order_index")
+                .usingColumns("title", "description", "card_type_id", "progress_type", "creation_date", "last_update_date", "completion_date", "scheduled_date", "due_date", "board_column_id", "order_index")
                 .usingGeneratedKeyColumns("id");
         
         // Garantir que as colunas de agendamento existam
@@ -85,11 +85,10 @@ public class CardRepository {
             // Intencional: não carregamos o objeto CardType aqui para evitar acoplamento no repositório.
             // A camada de serviço (ex.: CardService) é responsável por carregar o CardType quando necessário.
         }
-        
-        // Mapear campos de progresso
-        card.setTotalUnits(rs.getObject("total_units", Integer.class));
-        card.setCurrentUnits(rs.getObject("current_units", Integer.class));
-        
+
+        // Campos de progresso foram removidos - agora usamos o sistema de Fields
+        // total_units e current_units foram migrados para PercentageField
+
         // Mapear o tipo de progresso
         String progressTypeStr = rs.getString("progress_type");
         if (progressTypeStr != null) {
@@ -182,8 +181,7 @@ public class CardRepository {
                 .addValue("title", card.getTitle())
                 .addValue("description", card.getDescription())
                 .addValue("card_type_id", card.getCardTypeId())
-                .addValue("total_units", card.getTotalUnits())
-                .addValue("current_units", card.getCurrentUnits())
+                // total_units e current_units foram removidos - migrados para PercentageField
                 .addValue("progress_type", card.getProgressTypeOrDefault().name())
                 .addValue("creation_date", card.getCreationDate())
                 .addValue("last_update_date", card.getLastUpdateDate())
@@ -209,8 +207,6 @@ public class CardRepository {
                             title = :title,
                             description = :description,
                             card_type_id = :card_type_id,
-                            total_units = :total_units,
-                            current_units = :current_units,
                             progress_type = :progress_type,
                             last_update_date = :last_update_date,
                             completion_date = :completion_date,
@@ -226,8 +222,6 @@ public class CardRepository {
                             title = :title,
                             description = :description,
                             card_type_id = :card_type_id,
-                            total_units = :total_units,
-                            current_units = :current_units,
                             progress_type = :progress_type,
                             last_update_date = :last_update_date,
                             completion_date = :completion_date,
@@ -286,8 +280,6 @@ public class CardRepository {
                                     title = :title,
                                     description = :description,
                                     card_type_id = :card_type_id,
-                                    total_units = :total_units,
-                                    current_units = :current_units,
                                     progress_type = :progress_type,
                                     last_update_date = :last_update_date,
                                     completion_date = :completion_date,
