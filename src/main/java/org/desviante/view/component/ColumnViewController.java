@@ -238,6 +238,7 @@ public class ColumnViewController {
         progressTypeComboBox.getItems().addAll(
                 ProgressType.PERCENTAGE,
                 ProgressType.CHECKLIST,
+                ProgressType.TOTAL,
                 ProgressType.NONE
         );
         
