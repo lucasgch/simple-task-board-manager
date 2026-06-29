@@ -51,14 +51,48 @@ public class ChecklistItemService {
         if (text == null || text.trim().isEmpty()) {
             throw new IllegalArgumentException("O texto do item não pode estar vazio.");
         }
-
-        // Obter a próxima posição disponível
         int nextOrderIndex = fieldService.countFieldsByCardId(cardId);
-
-        // Criar o item usando o FieldService
         ChecklistField field = fieldService.createChecklistItem(cardId, text.trim(), nextOrderIndex);
-
         return convertFieldToDTO(field);
+    }
+
+    public ChecklistItemDTO addItemToGroup(Long cardId, Long groupId, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException("O texto do item não pode estar vazio.");
+        }
+        List<Field> existing = fieldService.getChecklistItemsByGroupId(groupId);
+        ChecklistField field = fieldService.createChecklistItemInGroup(cardId, groupId, text.trim(), existing.size());
+        return convertFieldToDTO(field);
+    }
+
+    public List<ChecklistItemDTO> getItemsByGroupId(Long groupId) {
+        return fieldService.getChecklistItemsByGroupId(groupId).stream()
+                .filter(f -> f instanceof ChecklistField)
+                .map(f -> convertFieldToDTO((ChecklistField) f))
+                .collect(Collectors.toList());
+    }
+
+    public int removeAllItemsFromGroup(Long groupId) {
+        List<ChecklistItemDTO> items = getItemsByGroupId(groupId);
+        items.forEach(item -> fieldService.deleteField(item.id()));
+        return items.size();
+    }
+
+    public void updateGroupNameAndDescription(Long groupId, String name, String description) {
+        fieldService.findById(groupId).ifPresent(f -> {
+            if (f instanceof ChecklistField group) {
+                group.setText(name);
+                group.setDescription(description);
+                fieldService.updateField(group);
+            }
+        });
+    }
+
+    public String getGroupDescription(Long groupId) {
+        return fieldService.findById(groupId)
+            .filter(f -> f instanceof ChecklistField)
+            .map(f -> ((ChecklistField) f).getDescription())
+            .orElse(null);
     }
 
     /**

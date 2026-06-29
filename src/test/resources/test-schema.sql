@@ -3,6 +3,7 @@
 DROP TABLE IF EXISTS integration_sync_status CASCADE;
 DROP TABLE IF EXISTS calendar_events CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
+DROP TABLE IF EXISTS fields CASCADE;
 DROP TABLE IF EXISTS checklist_items CASCADE;
 DROP TABLE IF EXISTS cards CASCADE;
 DROP TABLE IF EXISTS board_columns CASCADE;
@@ -84,6 +85,30 @@ CREATE TABLE checklist_items (
 
 CREATE INDEX idx_checklist_items_card_id ON checklist_items(card_id);
 CREATE INDEX idx_checklist_items_order_index ON checklist_items(order_index);
+
+-- Definição da tabela 'fields' (sistema genérico de campos de progresso)
+CREATE TABLE fields (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    card_id BIGINT NOT NULL,
+    field_type VARCHAR(50) NOT NULL,
+    order_index INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    checklist_text TEXT,
+    checklist_description VARCHAR(255),
+    checklist_completed BOOLEAN DEFAULT FALSE,
+    checklist_completed_at TIMESTAMP,
+    percentage_label VARCHAR(255),
+    percentage_total INTEGER,
+    percentage_current INTEGER DEFAULT 0,
+    percentage_description VARCHAR(50),
+    parent_field_id BIGINT,
+    CONSTRAINT fk_fields_cards FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_fields_card_id ON fields(card_id);
+CREATE INDEX idx_fields_type ON fields(field_type);
+CREATE INDEX idx_fields_order ON fields(card_id, order_index);
 
 -- Definição da tabela 'tasks' (para integração com Google Tasks)
 CREATE TABLE tasks (

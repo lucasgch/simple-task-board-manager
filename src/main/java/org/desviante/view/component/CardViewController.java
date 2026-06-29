@@ -11,12 +11,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.desviante.model.ChecklistField;
+import org.desviante.model.Field;
 import org.desviante.service.TaskManagerFacade;
 import org.desviante.service.dto.CardDetailDTO;
 import org.desviante.service.dto.UpdateCardDetailsDTO;
 import org.desviante.model.Card;
 import org.desviante.model.CardType;
 
+import java.util.ArrayList;
 import java.util.function.BiConsumer;
 import org.desviante.model.enums.ProgressType;
 import org.desviante.service.progress.ProgressContext;
@@ -123,11 +126,17 @@ public class CardViewController {
     
     // --- COMPONENTE DE CHECKLIST ---
     @FXML private VBox checklistContainer;
-    private ChecklistViewController checklistViewController;
+    private final List<ChecklistViewController> checklistControllers = new ArrayList<>();
+    private ChecklistItemService checklistItemService;
 
     // --- COMPONENTE DE CAMPOS PERCENTUAIS ---
     @FXML private VBox fieldContainer;
     private FieldViewController fieldViewController;
+
+    // --- BOTÕES DE ADIÇÃO RÁPIDA ---
+    @FXML private HBox addFieldsBox;
+    @FXML private Button addPercentageFieldButton;
+    @FXML private Button addChecklistItemButton;
 
     // --- CAMPOS DE DADOS ---
     private TaskManagerFacade facade;
@@ -211,10 +220,10 @@ public class CardViewController {
     private void setupProgressTypeComboBox() {
         // Carregar tipos de progresso disponíveis (sem CUSTOM)
         progressTypeComboBox.getItems().setAll(
-            ProgressType.PERCENTAGE,
+            ProgressType.NONE,
             ProgressType.CHECKLIST,
-            ProgressType.TOTAL,
-            ProgressType.NONE
+            ProgressType.PERCENTAGE,
+            ProgressType.TOTAL
         );
         
         // Configurar a exibição dos itens
@@ -464,22 +473,30 @@ public class CardViewController {
      * Configura o componente de checklist.
      */
     private void setupChecklistComponent() {
+        checklistContainer.getChildren().clear();
+        checklistControllers.clear();
+        checklistContainer.setVisible(false);
+        checklistContainer.setManaged(false);
+    }
+
+    private void addChecklistGroupController(ChecklistField group, Long cardId) {
         try {
-            // Carregar o FXML do checklist
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/checklist-view.fxml"));
             VBox checklistView = loader.load();
-            checklistViewController = loader.getController();
-            
-            // Adicionar o componente ao container
-            checklistContainer.getChildren().clear();
+            ChecklistViewController controller = loader.getController();
+            controller.initialize(checklistItemService);
+            controller.setOnProgressChanged(this::refreshProgressDisplay);
+            controller.setOnGroupDeleted(() -> {
+                checklistContainer.getChildren().remove(checklistView);
+                checklistControllers.remove(controller);
+                refreshChecklistContainerVisibility();
+                refreshProgressDisplay();
+            });
+            controller.loadGroup(cardId, group.getId(), group.getText());
             checklistContainer.getChildren().add(checklistView);
-            
-            // Ocultar inicialmente
-            checklistContainer.setVisible(false);
-            checklistContainer.setManaged(false);
-            
+            checklistControllers.add(controller);
         } catch (Exception e) {
-            System.err.println("Erro ao carregar componente de checklist: " + e.getMessage());
+            System.err.println("Erro ao carregar checklist group controller: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -511,6 +528,7 @@ public class CardViewController {
         if (fieldViewController != null && facade != null) {
             try {
                 fieldViewController.initialize(facade.getFieldService());
+                fieldViewController.setOnProgressChanged(this::refreshProgressDisplay);
             } catch (Exception e) {
                 System.err.println("Erro ao inicializar campos: " + e.getMessage());
                 e.printStackTrace();
@@ -523,19 +541,14 @@ public class CardViewController {
      */
     private void updateFieldComponent(CardDetailDTO card) {
         if (fieldViewController == null) return;
+        fieldViewController.loadFields(card.id());
+        refreshFieldContainerVisibility();
+    }
 
-        boolean showFields = card.progressType() == ProgressType.PERCENTAGE
-                || card.progressType() == ProgressType.TOTAL
-                || card.progressType() == ProgressType.FIELDS;
-
-        if (showFields) {
-            fieldContainer.setVisible(true);
-            fieldContainer.setManaged(true);
-            fieldViewController.loadFields(card.id());
-        } else {
-            fieldContainer.setVisible(false);
-            fieldContainer.setManaged(false);
-        }
+    private void refreshFieldContainerVisibility() {
+        boolean hasFields = fieldViewController != null && fieldViewController.hasFields();
+        fieldContainer.setVisible(hasFields);
+        fieldContainer.setManaged(hasFields);
     }
 
     /**
@@ -708,6 +721,7 @@ public class CardViewController {
         updateProgressFields(card);
         updateSchedulingFields(card);
         updateFooter(card);
+        showAddFieldsButtons();
         
         // Garantir que os controles de movimentação sejam exibidos em modo de visualização
         switchToDisplayMode();
@@ -893,50 +907,34 @@ public class CardViewController {
     }
     
     /**
-     * Inicializa o componente de checklist se necessário.
+     * Inicializa o serviço de checklist se necessário.
      */
     private void initializeChecklistIfNeeded() {
-        if (checklistViewController != null && facade != null) {
-            try {
-                // Inicializar o controller do checklist
-                ChecklistItemService checklistItemService = new ChecklistItemService(
-                    facade.getFieldService()
-                );
-                checklistViewController.initialize(checklistItemService);
-            } catch (Exception e) {
-                System.err.println("Erro ao inicializar checklist: " + e.getMessage());
-                e.printStackTrace();
-            }
+        if (facade != null && checklistItemService == null) {
+            checklistItemService = new ChecklistItemService(facade.getFieldService());
         }
     }
     
     /**
-     * Atualiza o componente de checklist baseado no tipo de progresso do card.
-     * 
-     * @param card dados do card
+     * Atualiza o componente de checklist baseado nos grupos existentes do card.
      */
     private void updateChecklistComponent(CardDetailDTO card) {
-        if (checklistViewController == null) {
-            return;
+        checklistContainer.getChildren().clear();
+        checklistControllers.clear();
+        if (checklistItemService == null) return;
+        List<Field> groups = facade.getFieldService().getChecklistGroupsByCardId(card.id());
+        for (Field group : groups) {
+            if (group instanceof ChecklistField cf) {
+                addChecklistGroupController(cf, card.id());
+            }
         }
-        
-        // Mostrar checklist para CHECKLIST, TOTAL e FIELDS
-        boolean showChecklist = card.progressType() == ProgressType.CHECKLIST
-                || card.progressType() == ProgressType.TOTAL
-                || card.progressType() == ProgressType.FIELDS;
-        
-        if (showChecklist) {
-            // Mostrar o container do checklist
-            checklistContainer.setVisible(true);
-            checklistContainer.setManaged(true);
+        refreshChecklistContainerVisibility();
+    }
 
-            // Carregar os itens do checklist e garantir cardId presente no controller
-            checklistViewController.loadChecklistItems(card.id());
-        } else {
-            // Ocultar o container do checklist
-            checklistContainer.setVisible(false);
-            checklistContainer.setManaged(false);
-        }
+    private void refreshChecklistContainerVisibility() {
+        boolean hasGroups = !checklistControllers.isEmpty();
+        checklistContainer.setVisible(hasGroups);
+        checklistContainer.setManaged(hasGroups);
     }
 
     /**
@@ -981,40 +979,9 @@ public class CardViewController {
      * Atualiza o display de progresso baseado nos valores dos spinners
      */
     private void updateProgressDisplay() {
-        if (cardData == null) {
-            progressValueLabel.setText("0%");
-            return;
-        }
-        
-        // Verificar se o card tem progresso habilitado
-        if (cardData.progressType() == null || !cardData.progressType().isEnabled()) {
-            progressValueLabel.setText("");
-            return;
-        }
-        
-        // Para CHECKLIST, não exibir porcentagem pois o progresso é baseado nos itens do checklist
-        if (cardData.progressType() == ProgressType.CHECKLIST) {
-            progressValueLabel.setText(""); // Não exibir porcentagem para checklist
-            return;
-        }
-        
-        double progress = 0.0;
-        
-        // Usar spinners genéricos para todos os tipos (exceto CHECKLIST)
-        int total = totalSpinner.getValue();
-        int current = currentSpinner.getValue();
-        
-        if (total > 0) {
-            progress = (double) current / total * 100;
-        }
-        
-        // Limitar progresso a 100%
-        progress = Math.min(100.0, progress);
-        
-        // Atualizar label de progresso
-        progressValueLabel.setText(String.format("%.1f%%", progress));
-        
-        // NÃO atualizar status aqui - isso é feito separadamente baseado na coluna
+        // O display de progresso é gerenciado por ProgressContext.updateDisplay()
+        // via a estratégia ativa. Este método é mantido apenas para compatibilidade
+        // com os listeners dos spinners (que são ocultados e não afetam o cálculo).
     }
     
     /**
@@ -1161,78 +1128,27 @@ public class CardViewController {
         dueHourSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateUrgencyDisplay());
         dueMinuteSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateUrgencyDisplay());
         
-        // Mostrar campos de progresso em modo de edição e torná-los editáveis
+        // Mostrar campos de progresso em modo de edição
         if (progressContainer.isVisible()) {
             progressContainer.setVisible(true);
             progressContainer.setManaged(true);
-            
-            // Verificar se o progresso está habilitado
-            if (progressContext.isProgressEnabled()) {
-                // Para progresso habilitado, por padrão mostra a seção
-                progressSection.setVisible(true);
-                progressSection.setManaged(true);
-                
-                // Verificar se é tipo CHECKLIST para tratamento específico
-                if (cardData.progressType() == ProgressType.CHECKLIST) {
-                    // Para CHECKLIST, ocultar toda a seção de progresso (label/valor/spinners)
-                    progressSection.setVisible(false);
-                    progressSection.setManaged(false);
-                    
-                    totalLabel.setVisible(false);
-                    totalSpinner.setVisible(false);
-                    currentLabel.setVisible(false);
-                    currentSpinner.setVisible(false);
-                    
-                    progressLabel.setVisible(false);
-                    progressLabel.setManaged(false);
-                    progressValueLabel.setVisible(false);
-                    progressValueLabel.setManaged(false);
-                    
-                    setSpinnersEditable(false); // Desabilitar edição dos spinners para checklist
-                    
-                    // Mostrar o container do checklist em modo de edição
-                    checklistContainer.setVisible(true);
-                    checklistContainer.setManaged(true);
-                } else {
-                    // Para outros tipos de progresso (PERCENTAGE), mostrar spinners
-                    totalLabel.setVisible(true);
-                    totalSpinner.setVisible(true);
-                    currentLabel.setVisible(true);
-                    currentSpinner.setVisible(true);
-                    
-                    // Mostrar label "Progresso:" apenas se progresso estiver habilitado
-                    progressLabel.setVisible(true);
-                    progressLabel.setManaged(true);
-                    progressValueLabel.setVisible(true);
-                    progressValueLabel.setManaged(true);
-                    
-                    setSpinnersEditable(true); // Permitir edição dos spinners
-                }
-            } else {
-                // Para progresso desabilitado, ocultar controles de progresso mas manter tipo de progresso
-                progressSection.setVisible(false);
-                progressSection.setManaged(false);
-                
-                // Ocultar os controles "total" e "atual"
-                totalLabel.setVisible(false);
-                totalSpinner.setVisible(false);
-                currentLabel.setVisible(false);
-                currentSpinner.setVisible(false);
-                
-                // Ocultar label "Progresso:"
-                progressLabel.setVisible(false);
-                
-                setSpinnersEditable(false); // Desabilitar edição dos spinners
-            }
-            
+
+            // A seção com spinners manuais nunca é exibida: o progresso é sempre
+            // calculado a partir dos campos (checklist e percentuais)
+            progressSection.setVisible(false);
+            progressSection.setManaged(false);
+            totalLabel.setVisible(false);
+            totalSpinner.setVisible(false);
+            currentLabel.setVisible(false);
+            currentSpinner.setVisible(false);
+            setSpinnersEditable(false);
+
             // Mostrar "Status:" sempre em modo de edição
             statusValueLabel.getParent().setVisible(true);
-            
+
             // Mostrar o ComboBox do tipo de progresso em modo de edição
             progressTypeContainer.setVisible(true);
             progressTypeContainer.setManaged(true);
-            
-            // Definir o valor atual do tipo de progresso
             progressTypeComboBox.setValue(cardData.progressType());
         }
         
@@ -1264,68 +1180,29 @@ public class CardViewController {
         schedulingSection.setVisible(false);
         schedulingSection.setManaged(false);
         
-        // Configurar campos de progresso baseado no tipo de progresso
+        // Configurar campos de progresso em modo de visualização
         if (progressContainer.isVisible()) {
             progressContainer.setVisible(true);
             progressContainer.setManaged(true);
-            
-            // Verificar se o progresso está habilitado
-            if (progressContext.isProgressEnabled()) {
-                                 // Verificar se é tipo CHECKLIST para tratamento específico
-                 if (cardData.progressType() == ProgressType.CHECKLIST) {
-                     // Para CHECKLIST, ocultar spinners pois o progresso é calculado automaticamente
-                     totalLabel.setVisible(false);
-                     totalSpinner.setVisible(false);
-                     currentLabel.setVisible(false);
-                     currentSpinner.setVisible(false);
-                     
-                     // Ocultar label "Progresso:" para checklist
-                     progressLabel.setVisible(false);
-                     progressLabel.setManaged(false);
-                     progressLabel.setManaged(true);
-                     
-                     // Mostrar o container do checklist em modo de exibição
-                     checklistContainer.setVisible(true);
-                     checklistContainer.setManaged(true);
-                                  } else {
-                     // Para outros tipos de progresso (PERCENTAGE), ocultar controles de edição mas manter progresso visível
-                     totalLabel.setVisible(false);
-                     totalSpinner.setVisible(false);
-                     currentLabel.setVisible(false);
-                     currentSpinner.setVisible(false);
-                     
-                      // Manter o label "Progresso:" visível
-                      progressLabel.setVisible(true);
-                      progressLabel.setManaged(true);
-                     
-                     // Ocultar o container do checklist para outros tipos
-                     checklistContainer.setVisible(false);
-                     checklistContainer.setManaged(false);
-                 }
-                         } else {
-                 // Para progresso desabilitado, ocultar todos os campos de progresso
-                 totalLabel.setVisible(false);
-                 totalSpinner.setVisible(false);
-                 currentLabel.setVisible(false);
-                 currentSpinner.setVisible(false);
-                 progressLabel.setVisible(false);
-                 
-                 // Ocultar o container do checklist
-                 checklistContainer.setVisible(false);
-                 checklistContainer.setManaged(false);
-             }
-            
+
+            // Spinners manuais sempre ocultos: progresso vem dos campos
+            progressSection.setVisible(false);
+            progressSection.setManaged(false);
+            totalLabel.setVisible(false);
+            totalSpinner.setVisible(false);
+            currentLabel.setVisible(false);
+            currentSpinner.setVisible(false);
+            setSpinnersEditable(false);
+
             // Garantir que o status seja sempre visível em modo de exibição
             if (statusValueLabel.getParent() != null) {
                 statusValueLabel.getParent().setVisible(true);
                 statusValueLabel.getParent().setManaged(true);
             }
-            
+
             // Ocultar o ComboBox do tipo de progresso em modo de visualização
             progressTypeContainer.setVisible(false);
             progressTypeContainer.setManaged(false);
-            
-            setSpinnersEditable(false); // Somente leitura
         }
     }
 
@@ -1349,20 +1226,9 @@ public class CardViewController {
             selectedProgressType = ProgressType.NONE; // Valor padrão
         }
         
-        // Para CHECKLIST, não usar valores dos spinners pois o progresso é calculado automaticamente
-        Integer totalUnits = null;
-        Integer currentUnits = null;
-        
-        if (selectedProgressType == ProgressType.CHECKLIST) {
-            // Para checklist, usar valores padrão que serão calculados automaticamente
-            // baseado nos itens do checklist
-            totalUnits = 1; // Valor mínimo para evitar erros de validação
-            currentUnits = 0; // Será calculado automaticamente baseado nos itens concluídos
-        } else {
-            // Para outros tipos, usar valores dos spinners
-            totalUnits = totalSpinner.getValue();
-            currentUnits = currentSpinner.getValue();
-        }
+        // O progresso é sempre calculado pelos campos (checklist/percentuais) via estratégia
+        Integer totalUnits = totalSpinner.getValue();
+        Integer currentUnits = currentSpinner.getValue();
         
         // Usar ProgressContext para validação
         ProgressInputData inputData = new ProgressInputData(totalUnits, currentUnits, newTitle, newDescription);
@@ -1662,6 +1528,53 @@ public class CardViewController {
         });
 
         new Thread(creationTask).start();
+    }
+
+    private void refreshProgressDisplay() {
+        if (cardData != null && progressContext != null) {
+            progressContext.updateDisplay(
+                cardData.totalUnits(),
+                cardData.currentUnits(),
+                cardData.columnKind(),
+                cardData.id()
+            );
+        }
+    }
+
+    private void showAddFieldsButtons() {
+        if (addFieldsBox != null) {
+            addFieldsBox.setVisible(true);
+            addFieldsBox.setManaged(true);
+        }
+    }
+
+    @FXML
+    private void handleAddPercentageField() {
+        if (fieldViewController != null) {
+            fieldViewController.promptAddField();
+            refreshFieldContainerVisibility();
+        }
+    }
+
+    @FXML
+    private void handleAddChecklistItem() {
+        if (cardData == null || checklistItemService == null) return;
+        TextInputDialog dialog = new TextInputDialog("Checklist");
+        dialog.setTitle("Novo Checklist");
+        dialog.setHeaderText("Nome do novo checklist:");
+        dialog.setContentText("Nome:");
+        dialog.showAndWait().ifPresent(name -> {
+            if (!name.trim().isEmpty()) {
+                try {
+                    int orderIndex = facade.getFieldService().countFieldsByCardId(cardData.id());
+                    ChecklistField group = facade.getFieldService().createChecklistGroup(cardData.id(), name.trim(), orderIndex);
+                    addChecklistGroupController(group, cardData.id());
+                    refreshChecklistContainerVisibility();
+                } catch (Exception e) {
+                    showAlert("Erro", "Erro ao criar checklist: " + e.getMessage(), Alert.AlertType.ERROR);
+                }
+            }
+        });
     }
 
     @FXML

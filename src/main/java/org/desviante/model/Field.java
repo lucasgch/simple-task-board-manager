@@ -53,6 +53,12 @@ public abstract class Field {
     protected FieldType fieldType;
 
     /**
+     * ID do campo pai (usado para checklist: grupo → itens).
+     * NULL para campos de nível superior; não nulo para itens dentro de um grupo.
+     */
+    protected Long parentFieldId;
+
+    /**
      * Posição do campo na lista de campos do card.
      * Utilizado para controlar a ordem de exibição dos campos.
      */
@@ -158,6 +164,9 @@ public abstract class Field {
     public void setFieldType(FieldType fieldType) {
         this.fieldType = fieldType;
     }
+
+    public Long getParentFieldId() { return parentFieldId; }
+    public void setParentFieldId(Long parentFieldId) { this.parentFieldId = parentFieldId; }
 
     /**
      * Retorna a posição do campo na lista de campos do card.

@@ -10,7 +10,7 @@
 
     <!-- Cabeçalho -->
     <HBox spacing="8" alignment="CENTER_LEFT" styleClass="checklist-header">
-        <Label text="Campos de Progresso" styleClass="checklist-title"/>
+        <Label text="Percentual" styleClass="checklist-title"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="progressLabel" text="0.0%" styleClass="checklist-progress"/>
     </HBox>
@@ -22,7 +22,7 @@
     <HBox spacing="6" alignment="CENTER_LEFT" styleClass="add-item-container">
         <TextField fx:id="labelTextField" promptText="Nome do campo..." styleClass="new-item-input" HBox.hgrow="ALWAYS"/>
         <Spinner fx:id="totalSpinner" prefWidth="80.0" editable="true"/>
-        <TextField fx:id="unitTextField" promptText="Unidade" prefWidth="70.0" styleClass="new-item-input"/>
+        <TextField fx:id="descriptionTextField" promptText="Descrição" prefWidth="130.0" styleClass="new-item-input"/>
         <Button fx:id="addFieldButton" text="+" styleClass="add-item-button"/>
     </HBox>
 

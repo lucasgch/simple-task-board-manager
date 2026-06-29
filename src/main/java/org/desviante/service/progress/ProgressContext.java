@@ -35,7 +35,6 @@ public class ProgressContext {
         strategies.put(ProgressType.NONE, new NoProgressStrategy());
         strategies.put(ProgressType.CHECKLIST, new ChecklistProgressStrategy(fieldService));
         strategies.put(ProgressType.TOTAL, new TotalProgressStrategy(fieldService));
-        strategies.put(ProgressType.FIELDS, new FieldsProgressStrategy(fieldService));
     }
     
     /**

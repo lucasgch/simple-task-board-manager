@@ -949,6 +949,63 @@
     -fx-background-color: #DEE2E6;
 }
 
+/* --- Botões de adição rápida no card (Percentual / Checklist) --- */
+
+.add-field-button {
+    -fx-background-color: #F8F9FA;
+    -fx-border-color: #ADB5BD;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #495057;
+    -fx-font-size: 11px;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+}
+
+.add-field-button:hover {
+    -fx-background-color: #E9ECEF;
+    -fx-border-color: #6C757D;
+}
+
+.add-field-button:pressed {
+    -fx-background-color: #DEE2E6;
+}
+
+/* --- Estilos dos cartões de campo percentual (FieldViewController) --- */
+
+.field-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #DEE2E6;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 8;
+    -fx-spacing: 6;
+}
+
+.field-card:hover {
+    -fx-border-color: #ADB5BD;
+}
+
+.field-card-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #343A40;
+}
+
+.field-card-unit {
+    -fx-font-size: 11px;
+    -fx-text-fill: #868E96;
+    -fx-padding: 0 0 4 0;
+}
+
+.field-card-progress {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #28A745;
+}
+
 /* Estilo para o botão do calendário */
 .calendar-button {
     -fx-background-color: #28a745; /* Verde */

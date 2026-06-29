@@ -35,6 +35,9 @@ public class ChecklistField extends Field {
      */
     private String text;
 
+    /** Descrição do grupo de checklist (usada apenas por CHECKLIST_GROUP). */
+    private String description;
+
     /**
      * Status de conclusão do item.
      * true se o item foi concluído, false se está pendente.
@@ -119,6 +122,9 @@ public class ChecklistField extends Field {
         this.text = text;
         touch();
     }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; touch(); }
 
     /**
      * Retorna o status de conclusão do item.

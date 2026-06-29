@@ -1,205 +1,250 @@
 package org.desviante.view.component;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.desviante.service.ChecklistItemService;
 import org.desviante.service.dto.ChecklistItemDTO;
 
 import java.util.List;
-import java.util.Optional;
 
-/**
- * Controlador para gerenciamento de checklist de cards.
- * 
- * <p>Gerencia a interface de usuário para itens do checklist, incluindo
- * criação, edição, remoção e controle de estado dos itens.</p>
- * 
- * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lgjor">GitHub</a>
- * @version 1.0
- * @since 1.0
- */
 public class ChecklistViewController {
-    
+
     @FXML private VBox checklistContainer;
+    @FXML private VBox headerPane;
+    @FXML private Label groupNameLabel;
+    @FXML private TextField groupNameField;
+    @FXML private Label groupDescLabel;
+    @FXML private TextField groupDescField;
     @FXML private Label progressLabel;
     @FXML private VBox itemsContainer;
     @FXML private TextField newItemTextField;
     @FXML private Button addItemButton;
     @FXML private Button clearCompletedButton;
     @FXML private Button removeAllButton;
-    
+
     private ChecklistItemService checklistItemService;
     private Long currentCardId;
+    private Long groupId;
     private List<ChecklistItemDTO> currentItems;
-    
-    /**
-     * Construtor padrão do controlador.
-     * 
-     * <p>Este construtor é chamado automaticamente pelo JavaFX
-     * durante a inicialização da interface.</p>
-     */
-    public ChecklistViewController() {
-        // Inicialização automática via JavaFX
-    }
-    
-    /**
-     * Inicializa o controller.
-     * 
-     * @param checklistItemService service para gerenciar itens
-     */
+    private Runnable onProgressChanged;
+    private Runnable onGroupDeleted;
+    private boolean[] isEditingHeader = {false};
+
+    public ChecklistViewController() {}
+
     public void initialize(ChecklistItemService checklistItemService) {
         this.checklistItemService = checklistItemService;
         setupEventHandlers();
     }
-    
-    /**
-     * Configura os event handlers dos componentes.
-     */
+
     private void setupEventHandlers() {
-        // Adicionar novo item
         addItemButton.setOnAction(e -> addNewItem());
         addItemButton.setTooltip(new Tooltip("Adicionar"));
         newItemTextField.setOnAction(e -> addNewItem());
-        
-        // Limpar itens concluídos
         clearCompletedButton.setOnAction(e -> clearCompletedItems());
-        
-        // Remover todos os itens
-        removeAllButton.setOnAction(e -> removeAllItems());
-        
-        // Focar no campo de texto quando o componente é mostrado
-        checklistContainer.setOnMouseClicked(e -> newItemTextField.requestFocus());
+        removeAllButton.setOnAction(e -> removeGroup());
+        checklistContainer.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) e.consume();
+        });
+        setupHeaderInlineEdit();
     }
-    
-    /**
-     * Carrega os itens do checklist para um card específico.
-     * 
-     * @param cardId identificador do card
-     */
-    public void loadChecklistItems(Long cardId) {
+
+    private void setupHeaderInlineEdit() {
+        Runnable startEdit = () -> {
+            if (isEditingHeader[0]) return;
+            isEditingHeader[0] = true;
+
+            groupNameLabel.setVisible(false); groupNameLabel.setManaged(false);
+            groupNameField.setText(groupNameLabel.getText());
+            groupNameField.setVisible(true); groupNameField.setManaged(true);
+
+            groupDescLabel.setVisible(false); groupDescLabel.setManaged(false);
+            groupDescField.setText(groupDescLabel.getText() != null ? groupDescLabel.getText() : "");
+            groupDescField.setVisible(true); groupDescField.setManaged(true);
+
+            Platform.runLater(() -> { groupNameField.requestFocus(); groupNameField.selectAll(); });
+        };
+
+        Runnable commitEdit = () -> {
+            if (!isEditingHeader[0]) return;
+            isEditingHeader[0] = false;
+
+            String newName = groupNameField.getText().trim();
+            String newDesc = groupDescField.getText().trim();
+
+            groupNameField.setVisible(false); groupNameField.setManaged(false);
+            groupDescField.setVisible(false); groupDescField.setManaged(false);
+            groupNameLabel.setVisible(true); groupNameLabel.setManaged(true);
+            groupDescLabel.setVisible(true); groupDescLabel.setManaged(true);
+
+            if (newName.isEmpty()) return;
+            try {
+                checklistItemService.updateGroupNameAndDescription(groupId, newName, newDesc);
+                groupNameLabel.setText(newName);
+                groupDescLabel.setText(newDesc);
+            } catch (Exception e) {
+                showError("Erro ao salvar", e.getMessage());
+            }
+        };
+
+        Runnable cancelEdit = () -> {
+            if (!isEditingHeader[0]) return;
+            isEditingHeader[0] = false;
+            groupNameField.setVisible(false); groupNameField.setManaged(false);
+            groupDescField.setVisible(false); groupDescField.setManaged(false);
+            groupNameLabel.setVisible(true); groupNameLabel.setManaged(true);
+            groupDescLabel.setVisible(true); groupDescLabel.setManaged(true);
+        };
+
+        headerPane.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) { startEdit.run(); e.consume(); }
+        });
+
+        groupNameField.setOnAction(e -> { groupDescField.requestFocus(); groupDescField.selectAll(); });
+        groupNameField.setOnKeyPressed(e -> { if (e.getCode() == KeyCode.ESCAPE) cancelEdit.run(); });
+        groupNameField.focusedProperty().addListener((obs, was, is) -> {
+            if (was && !is && isEditingHeader[0])
+                Platform.runLater(() -> { if (!groupDescField.isFocused()) commitEdit.run(); });
+        });
+
+        groupDescField.setOnAction(e -> commitEdit.run());
+        groupDescField.setOnKeyPressed(e -> { if (e.getCode() == KeyCode.ESCAPE) cancelEdit.run(); });
+        groupDescField.focusedProperty().addListener((obs, was, is) -> {
+            if (was && !is && isEditingHeader[0])
+                Platform.runLater(() -> { if (!groupNameField.isFocused()) commitEdit.run(); });
+        });
+    }
+
+    public void setOnProgressChanged(Runnable callback) { this.onProgressChanged = callback; }
+    public void setOnGroupDeleted(Runnable callback) { this.onGroupDeleted = callback; }
+
+    public void loadGroup(Long cardId, Long groupId, String groupName) {
         this.currentCardId = cardId;
+        this.groupId = groupId;
+        if (groupNameLabel != null) groupNameLabel.setText(groupName != null ? groupName : "Checklist");
+        // description starts empty; if the field exists it will be loaded via the service
+        if (groupDescLabel != null) {
+            String desc = checklistItemService.getGroupDescription(groupId);
+            groupDescLabel.setText(desc != null ? desc : "");
+        }
         refreshItems();
     }
-    
-    /**
-     * Atualiza a lista de itens.
-     */
+
     private void refreshItems() {
-        if (currentCardId == null) {
-            return;
-        }
-        
+        if (groupId == null) return;
         try {
-            currentItems = checklistItemService.getItemsByCardId(currentCardId);
+            currentItems = checklistItemService.getItemsByGroupId(groupId);
             updateItemsDisplay();
             updateProgressDisplay();
+            if (onProgressChanged != null) onProgressChanged.run();
         } catch (Exception e) {
-            showError("Erro ao carregar itens do checklist", e.getMessage());
+            showError("Erro ao carregar itens", e.getMessage());
         }
     }
-    
-    /**
-     * Atualiza a exibição dos itens.
-     */
+
     private void updateItemsDisplay() {
         itemsContainer.getChildren().clear();
-        
+        if (currentItems == null) return;
         for (ChecklistItemDTO item : currentItems) {
-            HBox itemBox = createItemBox(item);
-            itemsContainer.getChildren().add(itemBox);
+            itemsContainer.getChildren().add(createItemCard(item));
         }
     }
-    
-    /**
-     * Cria um HBox para representar um item do checklist.
-     * 
-     * @param item item a ser representado
-     * @return HBox com o item
-     */
-    private HBox createItemBox(ChecklistItemDTO item) {
-        HBox itemBox = new HBox(8);
-        itemBox.getStyleClass().add("checklist-item-box");
-        itemBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        // Checkbox para marcar como concluído
-        CheckBox completedCheckBox = new CheckBox();
-        completedCheckBox.getStyleClass().add("checklist-item-checkbox");
-        completedCheckBox.setSelected(item.completed());
-        completedCheckBox.setOnAction(e -> toggleItemCompleted(item, completedCheckBox.isSelected()));
+    private VBox createItemCard(ChecklistItemDTO item) {
+        VBox card = new VBox(4);
+        card.getStyleClass().add("field-card");
+        card.setPadding(new Insets(8));
 
-        // Label com o texto do item
-        Label itemLabel = new Label(item.text());
-        itemLabel.getStyleClass().add("checklist-item-label");
-        itemLabel.setWrapText(true);
-        itemLabel.setMaxWidth(Double.MAX_VALUE);
-        if (item.completed()) {
-            itemLabel.getStyleClass().add("completed");
-        }
+        Label titleLabel = new Label(item.text());
+        titleLabel.getStyleClass().add("field-card-title");
+        if (item.completed()) titleLabel.getStyleClass().add("completed");
+        titleLabel.setWrapText(true);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
-        // Botão para editar com ícone de caneta
-        Button editButton = new Button();
-        editButton.getStyleClass().addAll("checklist-item-button", "checklist-edit-button");
-        editButton.setOnAction(e -> editItem(item));
-        editButton.setTooltip(new Tooltip("Editar"));
-        javafx.scene.image.ImageView penIcon = org.desviante.util.IconManager.createIconViewWithoutWhiteBackground("270f", 14, 14, 0.15);
-        if (penIcon == null) {
-            penIcon = org.desviante.util.IconManager.createIconViewWithoutWhiteBackground("270f-fe0f", 14, 14, 0.15);
-        }
-        if (penIcon == null) {
-            penIcon = org.desviante.util.IconManager.createIconViewWithoutWhiteBackground("1f58a", 14, 14, 0.15);
-        }
-        if (penIcon == null) {
-            editButton.setText("✏");
-        } else {
-            editButton.setGraphic(penIcon);
-        }
+        TextField titleField = new TextField(item.text() != null ? item.text() : "");
+        titleField.setVisible(false);
+        titleField.setManaged(false);
+        HBox.setHgrow(titleField, Priority.ALWAYS);
 
-        // Botão para remover com texto "X"
-        Button removeButton = new Button("X");
-        removeButton.getStyleClass().addAll("checklist-item-button", "checklist-remove-button");
-        removeButton.setOnAction(e -> removeItem(item));
-        removeButton.setTooltip(new Tooltip("Remover"));
+        CheckBox checkBox = new CheckBox();
+        checkBox.setSelected(item.completed());
+        checkBox.setOnAction(e -> toggleItemCompleted(item, checkBox.isSelected()));
 
-        // Adicionar componentes ao HBox
-        itemBox.getChildren().addAll(completedCheckBox, itemLabel, editButton, removeButton);
-        HBox.setHgrow(itemLabel, javafx.scene.layout.Priority.ALWAYS);
+        Button deleteBtn = new Button("X");
+        deleteBtn.getStyleClass().addAll("checklist-item-button", "checklist-remove-button");
+        deleteBtn.setOnAction(e -> removeItem(item));
 
-        return itemBox;
+        HBox header = new HBox(8);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getChildren().addAll(checkBox, titleLabel, titleField, deleteBtn);
+        card.getChildren().add(header);
+
+        boolean[] isEditing = {false};
+
+        Runnable startEdit = () -> {
+            if (isEditing[0]) return;
+            isEditing[0] = true;
+            titleLabel.setVisible(false); titleLabel.setManaged(false);
+            titleField.setText(item.text() != null ? item.text() : "");
+            titleField.setVisible(true); titleField.setManaged(true);
+            titleField.requestFocus(); titleField.selectAll();
+        };
+
+        Runnable commitEdit = () -> {
+            if (!isEditing[0]) return;
+            isEditing[0] = false;
+            String newText = titleField.getText().trim();
+            titleField.setVisible(false); titleField.setManaged(false);
+            titleLabel.setVisible(true); titleLabel.setManaged(true);
+            if (!newText.isEmpty() && !newText.equals(item.text())) {
+                try {
+                    checklistItemService.updateItemText(item.id(), newText);
+                    refreshItems();
+                } catch (Exception e) {
+                    showError("Erro ao editar item", e.getMessage());
+                }
+            }
+        };
+
+        Runnable cancelEdit = () -> {
+            if (!isEditing[0]) return;
+            isEditing[0] = false;
+            titleField.setVisible(false); titleField.setManaged(false);
+            titleLabel.setVisible(true); titleLabel.setManaged(true);
+        };
+
+        card.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) { startEdit.run(); e.consume(); }
+        });
+        titleField.setOnAction(e -> commitEdit.run());
+        titleField.setOnKeyPressed(e -> { if (e.getCode() == KeyCode.ESCAPE) cancelEdit.run(); });
+        titleField.focusedProperty().addListener((obs, was, is) -> {
+            if (was && !is && isEditing[0]) Platform.runLater(commitEdit::run);
+        });
+
+        return card;
     }
-    
-    /**
-     * Adiciona um novo item ao checklist.
-     */
+
     private void addNewItem() {
-        // Garantir que temos um card associado
-        if (currentCardId == null) {
-            showError("Card não salvo", "Salve o card antes de adicionar itens ao checklist.");
-            return;
-        }
-
+        if (currentCardId == null || groupId == null) return;
         String text = newItemTextField.getText().trim();
-        if (text.isEmpty()) {
-            return;
-        }
-        
+        if (text.isEmpty()) return;
         try {
-            // Adicionar o item usando o service
-            checklistItemService.addItem(currentCardId, text);
+            checklistItemService.addItemToGroup(currentCardId, groupId, text);
             newItemTextField.clear();
             refreshItems();
         } catch (Exception e) {
             showError("Erro ao adicionar item", e.getMessage());
         }
     }
-    
-    /**
-     * Marca um item como concluído ou não concluído.
-     * 
-     * @param item item a ser alterado
-     * @param completed novo estado de conclusão
-     */
+
     private void toggleItemCompleted(ChecklistItemDTO item, boolean completed) {
         try {
             checklistItemService.toggleItemCompleted(item.id(), completed);
@@ -208,186 +253,89 @@ public class ChecklistViewController {
             showError("Erro ao atualizar item", e.getMessage());
         }
     }
-    
-    /**
-     * Edita o texto de um item.
-     * 
-     * @param item item a ser editado
-     */
-    private void editItem(ChecklistItemDTO item) {
-        TextInputDialog dialog = new TextInputDialog(item.text());
-        dialog.setTitle("Editar Item");
-        dialog.setHeaderText("Editar texto do item");
-        dialog.setContentText("Novo texto:");
-        
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(newText -> {
-            try {
-                checklistItemService.updateItemText(item.id(), newText);
-                refreshItems();
-            } catch (Exception e) {
-                showError("Erro ao editar item", e.getMessage());
-            }
-        });
-    }
-    
-    /**
-     * Remove um item do checklist.
-     * 
-     * @param item item a ser removido
-     */
+
     private void removeItem(ChecklistItemDTO item) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmar Remoção");
         alert.setHeaderText("Remover Item");
-        alert.setContentText("Tem certeza que deseja remover o item '" + item.text() + "'?");
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            try {
-                checklistItemService.removeItem(item.id());
-                refreshItems();
-            } catch (Exception e) {
-                showError("Erro ao remover item", e.getMessage());
-            }
-        }
-    }
-    
-    /**
-     * Remove todos os itens concluídos.
-     */
-    private void clearCompletedItems() {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmar Limpeza");
-        alert.setHeaderText("Limpar Itens Concluídos");
-        alert.setContentText("Tem certeza que deseja remover todos os itens concluídos?");
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            try {
-                long completedCount = currentItems.stream()
-                    .filter(ChecklistItemDTO::completed)
-                    .count();
-                
-                for (ChecklistItemDTO item : currentItems) {
-                    if (item.completed()) {
-                        checklistItemService.removeItem(item.id());
-                    }
+        alert.setContentText("Deseja remover '" + item.text() + "'?");
+        alert.showAndWait().ifPresent(bt -> {
+            if (bt == ButtonType.OK) {
+                try {
+                    checklistItemService.removeItem(item.id());
+                    refreshItems();
+                } catch (Exception e) {
+                    showError("Erro ao remover item", e.getMessage());
                 }
-                
-                refreshItems();
-                showInfo("Limpeza Concluída", 
-                    String.format("%d itens concluídos foram removidos.", completedCount));
-            } catch (Exception e) {
-                showError("Erro ao limpar itens concluídos", e.getMessage());
             }
-        }
+        });
     }
-    
-    /**
-     * Remove todos os itens do checklist.
-     */
-    private void removeAllItems() {
+
+    private void clearCompletedItems() {
+        if (currentItems == null) return;
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmar Remoção");
-        alert.setHeaderText("Remover Todos os Itens");
-        alert.setContentText("Tem certeza que deseja remover todos os itens do checklist?");
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            try {
-                int removedCount = checklistItemService.removeAllItemsFromCard(currentCardId);
-                refreshItems();
-                showInfo("Remoção Concluída", 
-                    String.format("%d itens foram removidos.", removedCount));
-            } catch (Exception e) {
-                showError("Erro ao remover todos os itens", e.getMessage());
+        alert.setTitle("Limpar Concluídos");
+        alert.setHeaderText("Remover itens concluídos deste checklist?");
+        alert.showAndWait().ifPresent(bt -> {
+            if (bt == ButtonType.OK) {
+                try {
+                    currentItems.stream().filter(ChecklistItemDTO::completed)
+                        .forEach(item -> checklistItemService.removeItem(item.id()));
+                    refreshItems();
+                } catch (Exception e) {
+                    showError("Erro ao limpar itens", e.getMessage());
+                }
             }
-        }
+        });
     }
-    
-    /**
-     * Atualiza a exibição do progresso.
-     */
+
+    private void removeGroup() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Remover Checklist");
+        alert.setHeaderText("Remover este checklist e todos os seus itens?");
+        alert.showAndWait().ifPresent(bt -> {
+            if (bt == ButtonType.OK) {
+                try {
+                    checklistItemService.removeAllItemsFromGroup(groupId);
+                    checklistItemService.removeItem(groupId); // remove the group record itself
+                    if (onGroupDeleted != null) onGroupDeleted.run();
+                } catch (Exception e) {
+                    showError("Erro ao remover checklist", e.getMessage());
+                }
+            }
+        });
+    }
+
     private void updateProgressDisplay() {
-        if (currentItems == null) {
-            progressLabel.setText("0/0");
-            return;
-        }
-        
-        long completedCount = currentItems.stream()
-            .filter(ChecklistItemDTO::completed)
-            .count();
-        
-        progressLabel.setText(String.format("%d/%d", completedCount, currentItems.size()));
+        if (currentItems == null) { progressLabel.setText("0/0"); return; }
+        long done = currentItems.stream().filter(ChecklistItemDTO::completed).count();
+        progressLabel.setText(done + "/" + currentItems.size());
     }
-    
-    /**
-     * Mostra uma mensagem de erro.
-     * 
-     * @param title título do erro
-     * @param message mensagem do erro
-     */
+
+    public void promptAddItem() {
+        if (currentCardId == null || groupId == null) return;
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Adicionar Item");
+        dialog.setHeaderText("Novo item em '" + groupNameLabel.getText() + "':");
+        dialog.setContentText("Texto:");
+        dialog.showAndWait().ifPresent(text -> {
+            if (!text.trim().isEmpty()) {
+                try {
+                    checklistItemService.addItemToGroup(currentCardId, groupId, text.trim());
+                    refreshItems();
+                } catch (Exception e) {
+                    showError("Erro ao adicionar item", e.getMessage());
+                }
+            }
+        });
+    }
+
+    public VBox getChecklistContainer() { return checklistContainer; }
+    public boolean hasItems() { return currentItems != null && !currentItems.isEmpty(); }
+
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Erro");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-    
-    /**
-     * Mostra uma mensagem de informação.
-     * 
-     * @param title título da informação
-     * @param message mensagem da informação
-     */
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Informação");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-    
-    /**
-     * Obtém o container principal do checklist.
-     * 
-     * @return VBox do checklist
-     */
-    public VBox getChecklistContainer() {
-        return checklistContainer;
-    }
-    
-    /**
-     * Verifica se há itens no checklist.
-     * 
-     * @return true se há itens, false caso contrário
-     */
-    public boolean hasItems() {
-        return currentItems != null && !currentItems.isEmpty();
-    }
-    
-    /**
-     * Obtém o número de itens concluídos.
-     * 
-     * @return número de itens concluídos
-     */
-    public int getCompletedCount() {
-        if (currentItems == null) {
-            return 0;
-        }
-        return (int) currentItems.stream()
-            .filter(ChecklistItemDTO::completed)
-            .count();
-    }
-    
-    /**
-     * Obtém o número total de itens.
-     * 
-     * @return número total de itens
-     */
-    public int getTotalCount() {
-        return currentItems != null ? currentItems.size() : 0;
+        alert.setTitle("Erro"); alert.setHeaderText(title);
+        alert.setContentText(message); alert.showAndWait();
     }
 }

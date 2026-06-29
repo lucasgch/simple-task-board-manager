@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
+import java.util.List;
 
 /**
  * Componente responsável pela migração automática de dados para o sistema de Fields.
@@ -58,6 +59,30 @@ public class FieldMigration {
     @PostConstruct
     public void executeMigration() {
         try {
+            renamePercentageUnitColumn();
+        } catch (Exception e) {
+            log.error("ERRO ao renomear coluna percentage_unit: {}", e.getMessage(), e);
+        }
+
+        try {
+            addParentFieldIdColumn();
+        } catch (Exception e) {
+            log.error("ERRO ao adicionar coluna parent_field_id: {}", e.getMessage(), e);
+        }
+
+        try {
+            addChecklistDescriptionColumn();
+        } catch (Exception e) {
+            log.error("ERRO ao adicionar coluna checklist_description: {}", e.getMessage(), e);
+        }
+
+        try {
+            migrateChecklistItemsToGroups();
+        } catch (Exception e) {
+            log.error("ERRO ao migrar checklist items para grupos: {}", e.getMessage(), e);
+        }
+
+        try {
             if (needsMigration()) {
                 log.info("=== Iniciando migração para sistema de Fields ===");
                 performMigration();
@@ -68,6 +93,60 @@ public class FieldMigration {
         } catch (Exception e) {
             log.error("ERRO durante a migração de Fields: {}", e.getMessage(), e);
             log.warn("A aplicação continuará executando, mas alguns dados podem não ter sido migrados");
+        }
+    }
+
+    private void addParentFieldIdColumn() {
+        if (!checkColumnExists("fields", "parent_field_id")) {
+            log.info("Adicionando coluna parent_field_id à tabela fields...");
+            jdbcTemplate.execute("ALTER TABLE fields ADD COLUMN parent_field_id BIGINT");
+            log.info("Coluna parent_field_id adicionada com sucesso");
+        }
+    }
+
+    private void addChecklistDescriptionColumn() {
+        if (!checkColumnExists("fields", "checklist_description")) {
+            log.info("Adicionando coluna checklist_description à tabela fields...");
+            jdbcTemplate.execute("ALTER TABLE fields ADD COLUMN checklist_description VARCHAR(255)");
+            log.info("Coluna checklist_description adicionada com sucesso");
+        }
+    }
+
+    private void migrateChecklistItemsToGroups() {
+        String sql = "SELECT COUNT(*) FROM fields WHERE FIELD_TYPE = 'CHECKLIST_ITEM' AND PARENT_FIELD_ID IS NULL";
+        Integer orphans = jdbcTemplate.queryForObject(sql, Integer.class);
+        if (orphans == null || orphans == 0) return;
+
+        log.info("Migrando {} checklist items órfãos para grupos...", orphans);
+
+        List<Long> cardIds = jdbcTemplate.queryForList(
+            "SELECT DISTINCT CARD_ID FROM fields WHERE FIELD_TYPE = 'CHECKLIST_ITEM' AND PARENT_FIELD_ID IS NULL",
+            Long.class
+        );
+
+        for (Long cardId : cardIds) {
+            jdbcTemplate.update(
+                "INSERT INTO fields (card_id, field_type, order_index, created_at, updated_at, checklist_text) " +
+                "VALUES (?, 'CHECKLIST_GROUP', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Checklist')",
+                cardId
+            );
+            Long groupId = jdbcTemplate.queryForObject(
+                "SELECT MAX(id) FROM fields WHERE CARD_ID = ? AND FIELD_TYPE = 'CHECKLIST_GROUP'",
+                Long.class, cardId
+            );
+            jdbcTemplate.update(
+                "UPDATE fields SET parent_field_id = ? WHERE CARD_ID = ? AND FIELD_TYPE = 'CHECKLIST_ITEM' AND PARENT_FIELD_ID IS NULL",
+                groupId, cardId
+            );
+        }
+        log.info("Migração de checklist grupos concluída para {} cards", cardIds.size());
+    }
+
+    private void renamePercentageUnitColumn() {
+        if (checkColumnExists("fields", "percentage_unit")) {
+            log.info("Renomeando coluna percentage_unit para percentage_description...");
+            jdbcTemplate.execute("ALTER TABLE fields RENAME COLUMN percentage_unit TO percentage_description");
+            log.info("Coluna percentage_unit renomeada para percentage_description com sucesso");
         }
     }
 
@@ -117,6 +196,7 @@ public class FieldMigration {
 
                 -- Checklist-specific fields (NULL for other types)
                 checklist_text TEXT,
+                checklist_description VARCHAR(255),
                 checklist_completed BOOLEAN DEFAULT FALSE,
                 checklist_completed_at TIMESTAMP,
 
@@ -124,7 +204,8 @@ public class FieldMigration {
                 percentage_label VARCHAR(255),
                 percentage_total INTEGER,
                 percentage_current INTEGER DEFAULT 0,
-                percentage_unit VARCHAR(50),
+                percentage_description VARCHAR(50),
+                parent_field_id BIGINT,
 
                 -- Foreign key constraint
                 CONSTRAINT fk_fields_cards FOREIGN KEY (card_id)
@@ -215,7 +296,7 @@ public class FieldMigration {
         String migrateSql = """
             INSERT INTO fields (
                 card_id, field_type, order_index, created_at, updated_at,
-                percentage_label, percentage_total, percentage_current, percentage_unit
+                percentage_label, percentage_total, percentage_current, percentage_description
             )
             SELECT
                 c.id,
@@ -226,7 +307,7 @@ public class FieldMigration {
                 'Progresso',
                 c.total_units,
                 c.current_units,
-                COALESCE(ct.unit_label, 'unidades')
+                NULL
             FROM cards c
             LEFT JOIN card_types ct ON c.card_type_id = ct.id
             WHERE c.total_units IS NOT NULL

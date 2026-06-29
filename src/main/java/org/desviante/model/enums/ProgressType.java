@@ -49,13 +49,6 @@ public enum ProgressType {
     TOTAL("Total (Todos os Campos)"),
 
     /**
-     * Progresso baseado em todos os campos genéricos (checklist + percentual).
-     * <p>Cards deste tipo calculam progresso como média aritmética de TODOS os
-     * campos (Field) associados, independente do tipo.</p>
-     */
-    FIELDS("Baseado em Campos"),
-
-    /**
      * Progresso customizado (reservado para futuras implementações).
      * <p>Permite implementar tipos de progresso específicos customizados.</p>
      */
