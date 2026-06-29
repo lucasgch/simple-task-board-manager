@@ -125,6 +125,10 @@ public class CardViewController {
     @FXML private VBox checklistContainer;
     private ChecklistViewController checklistViewController;
 
+    // --- COMPONENTE DE CAMPOS PERCENTUAIS ---
+    @FXML private VBox fieldContainer;
+    private FieldViewController fieldViewController;
+
     // --- CAMPOS DE DADOS ---
     private TaskManagerFacade facade;
     private CardDetailDTO cardData;
@@ -159,6 +163,7 @@ public class CardViewController {
         setupProgressTypeComboBox();
         setupCardTypeComboBox();
         setupChecklistComponent();
+        setupFieldComponent();
         setupDatePickers();
         
         // ProgressContext é inicializado em setData() quando facade está disponível
@@ -208,6 +213,7 @@ public class CardViewController {
         progressTypeComboBox.getItems().setAll(
             ProgressType.PERCENTAGE,
             ProgressType.CHECKLIST,
+            ProgressType.TOTAL,
             ProgressType.NONE
         );
         
@@ -479,6 +485,60 @@ public class CardViewController {
     }
 
     /**
+     * Configura o componente de campos percentuais.
+     */
+    private void setupFieldComponent() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/percentage-fields-view.fxml"));
+            VBox fieldView = loader.load();
+            fieldViewController = loader.getController();
+
+            fieldContainer.getChildren().clear();
+            fieldContainer.getChildren().add(fieldView);
+
+            fieldContainer.setVisible(false);
+            fieldContainer.setManaged(false);
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar componente de campos: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Inicializa o FieldViewController com o FieldService quando o facade está disponível.
+     */
+    private void initializeFieldComponentIfNeeded() {
+        if (fieldViewController != null && facade != null) {
+            try {
+                fieldViewController.initialize(facade.getFieldService());
+            } catch (Exception e) {
+                System.err.println("Erro ao inicializar campos: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Atualiza a visibilidade do componente de campos percentuais com base no tipo de progresso.
+     */
+    private void updateFieldComponent(CardDetailDTO card) {
+        if (fieldViewController == null) return;
+
+        boolean showFields = card.progressType() == ProgressType.PERCENTAGE
+                || card.progressType() == ProgressType.TOTAL
+                || card.progressType() == ProgressType.FIELDS;
+
+        if (showFields) {
+            fieldContainer.setVisible(true);
+            fieldContainer.setManaged(true);
+            fieldViewController.loadFields(card.id());
+        } else {
+            fieldContainer.setVisible(false);
+            fieldContainer.setManaged(false);
+        }
+    }
+
+    /**
      * Configura os spinners de progresso com valores padrão e listeners
      */
     private void setupProgressSpinners() {
@@ -630,6 +690,7 @@ public class CardViewController {
 
         // Inicializar o checklist se ainda não foi inicializado
         initializeChecklistIfNeeded();
+        initializeFieldComponentIfNeeded();
         
         updateDisplayData(card);
     }
@@ -823,8 +884,9 @@ public class CardViewController {
             updateSpinnerValues(card);
         }
         
-        // Gerenciar componente de checklist
+        // Gerenciar componentes de checklist e campos percentuais
         updateChecklistComponent(card);
+        updateFieldComponent(card);
         
         // Atualizar o display de progresso após configurar tudo
         updateProgressDisplay();
@@ -858,8 +920,10 @@ public class CardViewController {
             return;
         }
         
-        // Mostrar checklist apenas se o tipo de progresso for CHECKLIST
-        boolean showChecklist = card.progressType() == ProgressType.CHECKLIST;
+        // Mostrar checklist para CHECKLIST, TOTAL e FIELDS
+        boolean showChecklist = card.progressType() == ProgressType.CHECKLIST
+                || card.progressType() == ProgressType.TOTAL
+                || card.progressType() == ProgressType.FIELDS;
         
         if (showChecklist) {
             // Mostrar o container do checklist
