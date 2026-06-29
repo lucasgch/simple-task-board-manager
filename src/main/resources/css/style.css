@@ -82,8 +82,8 @@
     -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: #666666;
-    -fx-min-width: 65px;
-    -fx-pref-width: 65px;
+    -fx-min-width: 85px;
+    -fx-pref-width: 85px;
     -fx-alignment: center-left;
 }
 
@@ -91,7 +91,7 @@
 .progress-value {
     -fx-font-size: 12px;
     -fx-font-weight: bold;
-    -fx-text-fill: #666666;
+    -fx-text-fill: #27ae60;
 }
 
 /* Status do card */

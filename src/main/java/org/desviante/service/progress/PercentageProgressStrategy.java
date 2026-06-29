@@ -74,7 +74,7 @@ public class PercentageProgressStrategy implements ProgressStrategy {
         // Mostrar label de progresso
         config.getProgressLabel().setVisible(true);
         config.getProgressLabel().setManaged(true);
-        config.getProgressLabel().setText("Progresso (campos percentuais):");
+        config.getProgressLabel().setText("Progresso:");
 
         // A interface de gerenciamento de campos será fornecida por
         // um componente separado (FieldViewController)
