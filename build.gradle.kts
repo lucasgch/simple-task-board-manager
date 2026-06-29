@@ -87,8 +87,8 @@ dependencies {
         exclude(group = "org.apache.logging.log4j")
     }
     implementation("jakarta.annotation:jakarta.annotation-api:2.1.1")
-    // Liquibase para migrações de banco (removido temporariamente)
-    // implementation("org.liquibase:liquibase-core:4.24.0")
+    // Liquibase para migrações de banco
+    implementation("org.liquibase:liquibase-core:4.24.0")
     implementation("org.slf4j:slf4j-simple:2.0.13")
     runtimeOnly("com.h2database:h2:2.3.232")
     compileOnly("org.projectlombok:lombok:1.18.32")

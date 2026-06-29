@@ -69,7 +69,8 @@ public class TaskManagerFacade {
     private final TaskService taskService;
     private final BoardGroupService boardGroupService;
     private final CardTypeService cardTypeService;
-    private final CheckListItemRepository checklistItemRepository;
+    private final CheckListItemRepository checklistItemRepository; // @Deprecated - use FieldService
+    private final FieldService fieldService;
     private final AppMetadataConfig appMetadataConfig;
     private final CalendarEventService calendarEventService;
     private final GoogleTaskCreationService googleTaskCreationService;
@@ -752,12 +753,26 @@ public class TaskManagerFacade {
     
     /**
      * Obtém o repositório de itens de checklist para uso na interface.
-     * 
+     *
+     * @deprecated Use {@link #getFieldService()} para operações com fields genéricos
      * @return Instância do CheckListItemRepository
      * @see CheckListItemRepository
+     * @see FieldService
      */
+    @Deprecated
     public CheckListItemRepository getChecklistItemRepository() {
         return checklistItemRepository;
+    }
+
+    /**
+     * Obtém o serviço de fields genéricos.
+     * Exposto para permitir inicialização de controllers que trabalham com fields.
+     *
+     * @return Instância do FieldService
+     * @see FieldService
+     */
+    public FieldService getFieldService() {
+        return fieldService;
     }
 
     /**

@@ -102,7 +102,17 @@ class TaskManagerFacadeIntegrationTest {
         public CheckListItemRepository checkListItemRepository(DataSource dataSource) {
             return new CheckListItemRepository(dataSource);
         }
-        
+
+        @Bean
+        public FieldService fieldService(FieldRepository fieldRepository, CardService cardService) {
+            return new FieldService(fieldRepository, mock(EventPublisher.class), cardService);
+        }
+
+        @Bean
+        public FieldRepository fieldRepository(DataSource dataSource) {
+            return new FieldRepository(dataSource);
+        }
+
         @Bean
         public BoardService boardService(BoardRepository boardRepository) {
             return new BoardService(boardRepository);
@@ -140,11 +150,11 @@ class TaskManagerFacadeIntegrationTest {
         }
         
         @Bean
-        public TaskManagerFacade taskManagerFacade(BoardService boardService, BoardColumnService boardColumnService, 
-                                                   CardService cardService, EnhancedCardService enhancedCardService, TaskService taskService, 
+        public TaskManagerFacade taskManagerFacade(BoardService boardService, BoardColumnService boardColumnService,
+                                                   CardService cardService, EnhancedCardService enhancedCardService, TaskService taskService,
                                                    BoardGroupService boardGroupService, CardTypeService cardTypeService,
-                                                   CheckListItemRepository checkListItemRepository) {
-            return new TaskManagerFacade(boardService, boardColumnService, cardService, enhancedCardService, taskService, boardGroupService, cardTypeService, checkListItemRepository, mock(AppMetadataConfig.class), mock(CalendarEventService.class), mock(GoogleTaskCreationService.class));
+                                                   CheckListItemRepository checkListItemRepository, FieldService fieldService) {
+            return new TaskManagerFacade(boardService, boardColumnService, cardService, enhancedCardService, taskService, boardGroupService, cardTypeService, checkListItemRepository, fieldService, mock(AppMetadataConfig.class), mock(CalendarEventService.class), mock(GoogleTaskCreationService.class));
         }
         
         @Bean

@@ -1,6 +1,9 @@
 package org.desviante.service;
 
 import org.desviante.model.CheckListItem;
+import org.desviante.model.ChecklistField;
+import org.desviante.model.Field;
+import org.desviante.model.enums.FieldType;
 import org.desviante.repository.CheckListItemRepository;
 import org.desviante.service.dto.ChecklistItemDTO;
 import org.springframework.stereotype.Service;
@@ -11,28 +14,35 @@ import java.util.stream.Collectors;
 
 /**
  * Service para gerenciar a lógica de negócio dos itens do checklist.
- * 
+ *
+ * <p><strong>REFATORADO:</strong> Este serviço foi refatorado para usar o novo
+ * sistema genérico de Fields. Agora delega todas as operações para o {@link FieldService},
+ * mantendo a interface original para compatibilidade com o código existente.</p>
+ *
+ * <p>A camada de compatibilidade converte entre CheckListItem (modelo antigo) e
+ * ChecklistField (modelo novo), permitindo uma transição suave.</p>
+ *
  * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lgjor">GitHub</a>
- * @version 1.0
+ * @version 2.0
  * @since 1.0
  */
 @Service
 public class ChecklistItemService {
-    
-    private final CheckListItemRepository checklistItemRepository;
-    
+
+    private final FieldService fieldService;
+
     /**
      * Construtor que inicializa o serviço com as dependências necessárias.
-     * 
-     * @param checklistItemRepository repositório para operações de itens de checklist
+     *
+     * @param fieldService serviço para operações com fields genéricos
      */
-    public ChecklistItemService(CheckListItemRepository checklistItemRepository) {
-        this.checklistItemRepository = checklistItemRepository;
+    public ChecklistItemService(FieldService fieldService) {
+        this.fieldService = fieldService;
     }
     
     /**
      * Adiciona um novo item ao checklist de um card.
-     * 
+     *
      * @param cardId identificador do card
      * @param text texto do item
      * @return DTO do item criado
@@ -41,34 +51,29 @@ public class ChecklistItemService {
         if (text == null || text.trim().isEmpty()) {
             throw new IllegalArgumentException("O texto do item não pode estar vazio.");
         }
-        
+
         // Obter a próxima posição disponível
-        int nextOrderIndex = checklistItemRepository.countByCardId(cardId);
-        
-        // Criar o item
-        CheckListItem item = new CheckListItem(text.trim());
-        item.setCardId(cardId);
-        item.setOrderIndex(nextOrderIndex);
-        
-        // Salvar no banco
-        CheckListItem savedItem = checklistItemRepository.save(item);
-        
-        return convertToDTO(savedItem);
+        int nextOrderIndex = fieldService.countFieldsByCardId(cardId);
+
+        // Criar o item usando o FieldService
+        ChecklistField field = fieldService.createChecklistItem(cardId, text.trim(), nextOrderIndex);
+
+        return convertFieldToDTO(field);
     }
-    
+
     /**
      * Remove um item do checklist.
-     * 
+     *
      * @param itemId identificador do item
      * @return true se removido com sucesso
      */
     public boolean removeItem(Long itemId) {
-        return checklistItemRepository.deleteById(itemId);
+        return fieldService.deleteField(itemId);
     }
-    
+
     /**
      * Atualiza o texto de um item.
-     * 
+     *
      * @param itemId identificador do item
      * @param newText novo texto
      * @return DTO do item atualizado
@@ -77,33 +82,41 @@ public class ChecklistItemService {
         if (newText == null || newText.trim().isEmpty()) {
             throw new IllegalArgumentException("O texto do item não pode estar vazio.");
         }
-        
-        Optional<CheckListItem> itemOpt = checklistItemRepository.findById(itemId);
-        if (itemOpt.isEmpty()) {
+
+        Optional<Field> fieldOpt = fieldService.findById(itemId);
+        if (fieldOpt.isEmpty() || !(fieldOpt.get() instanceof ChecklistField)) {
             return Optional.empty();
         }
-        
-        CheckListItem item = itemOpt.get();
-        item.setText(newText.trim());
-        
-        boolean updated = checklistItemRepository.update(item);
-        return updated ? Optional.of(convertToDTO(item)) : Optional.empty();
+
+        ChecklistField field = (ChecklistField) fieldOpt.get();
+        field.setText(newText.trim());
+
+        boolean updated = fieldService.updateField(field);
+        return updated ? Optional.of(convertFieldToDTO(field)) : Optional.empty();
     }
     
     /**
      * Marca um item como concluído ou não concluído.
-     * 
+     *
      * @param itemId identificador do item
      * @param completed estado de conclusão
      * @return true se atualizado com sucesso
      */
     public boolean toggleItemCompleted(Long itemId, boolean completed) {
-        return checklistItemRepository.updateCompleted(itemId, completed);
+        Optional<Field> fieldOpt = fieldService.findById(itemId);
+        if (fieldOpt.isEmpty() || !(fieldOpt.get() instanceof ChecklistField)) {
+            return false;
+        }
+
+        ChecklistField field = (ChecklistField) fieldOpt.get();
+        field.setCompleted(completed);
+
+        return fieldService.updateField(field);
     }
-    
+
     /**
      * Move um item para uma nova posição.
-     * 
+     *
      * @param itemId identificador do item
      * @param newOrderIndex nova posição
      * @return true se movido com sucesso
@@ -112,95 +125,91 @@ public class ChecklistItemService {
         if (newOrderIndex < 0) {
             throw new IllegalArgumentException("A posição deve ser maior ou igual a zero.");
         }
-        
-        return checklistItemRepository.updateOrderIndex(itemId, newOrderIndex);
+
+        return fieldService.reorderField(itemId, newOrderIndex);
     }
-    
+
     /**
      * Busca todos os itens de um card.
-     * 
+     *
      * @param cardId identificador do card
      * @return lista de DTOs dos itens
      */
     public List<ChecklistItemDTO> getItemsByCardId(Long cardId) {
-        List<CheckListItem> items = checklistItemRepository.findByCardIdOrderByOrderIndex(cardId);
-        return items.stream()
-                .map(this::convertToDTO)
+        List<Field> fields = fieldService.getFieldsByCardIdAndType(cardId, FieldType.CHECKLIST_ITEM);
+        return fields.stream()
+                .filter(field -> field instanceof ChecklistField)
+                .map(field -> convertFieldToDTO((ChecklistField) field))
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Busca um item por ID.
-     * 
+     *
      * @param itemId identificador do item
      * @return DTO do item ou empty
      */
     public Optional<ChecklistItemDTO> getItemById(Long itemId) {
-        return checklistItemRepository.findById(itemId)
-                .map(this::convertToDTO);
+        return fieldService.findById(itemId)
+                .filter(field -> field instanceof ChecklistField)
+                .map(field -> convertFieldToDTO((ChecklistField) field));
     }
-    
+
     /**
      * Conta quantos itens um card tem.
-     * 
+     *
      * @param cardId identificador do card
      * @return número de itens
      */
     public int getItemCount(Long cardId) {
-        return checklistItemRepository.countByCardId(cardId);
+        return fieldService.getFieldsByCardIdAndType(cardId, FieldType.CHECKLIST_ITEM).size();
     }
-    
+
     /**
      * Conta quantos itens concluídos um card tem.
-     * 
+     *
      * @param cardId identificador do card
      * @return número de itens concluídos
      */
     public int getCompletedItemCount(Long cardId) {
-        return checklistItemRepository.countCompletedByCardId(cardId);
+        return fieldService.countCompletedChecklistItems(cardId);
     }
-    
+
     /**
      * Calcula o progresso percentual do checklist.
-     * 
+     *
      * @param cardId identificador do card
      * @return percentual de conclusão (0-100)
      */
     public double getProgressPercentage(Long cardId) {
-        int totalItems = getItemCount(cardId);
-        if (totalItems == 0) {
-            return 0.0;
-        }
-        
-        int completedItems = getCompletedItemCount(cardId);
-        return (double) completedItems / totalItems * 100.0;
+        return fieldService.calculateFieldsProgressByType(cardId, FieldType.CHECKLIST_ITEM);
     }
-    
+
     /**
      * Remove todos os itens de um card.
-     * 
+     *
      * @param cardId identificador do card
      * @return número de itens removidos
      */
     public int removeAllItemsFromCard(Long cardId) {
-        return checklistItemRepository.deleteByCardId(cardId);
+        return fieldService.deleteFieldsByCardId(cardId);
     }
-    
+
     /**
-     * Converte um ChecklistItem para ChecklistItemDTO.
-     * 
-     * @param item item a ser convertido
+     * Converte um ChecklistField para ChecklistItemDTO.
+     *
+     * @param field field a ser convertido
      * @return DTO do item
      */
-    private ChecklistItemDTO convertToDTO(CheckListItem item) {
+    private ChecklistItemDTO convertFieldToDTO(ChecklistField field) {
         return new ChecklistItemDTO(
-            item.getId(),
-            item.getCardId(),
-            item.getText(),
-            item.isCompleted(),
-            item.getOrderIndex(),
-            item.getCreatedAt(),
-            item.getCompletedAt()
+            field.getId(),
+            field.getCardId(),
+            field.getText(),
+            field.isCompleted(),
+            field.getOrderIndex(),
+            field.getCreatedAt(),
+            field.getCompletedAt()
         );
     }
 }

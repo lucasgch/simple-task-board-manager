@@ -2,6 +2,7 @@ package org.desviante.service.progress;
 
 import org.desviante.model.enums.ProgressType;
 import org.desviante.model.enums.BoardColumnKindEnum;
+import org.desviante.service.FieldService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,23 +18,24 @@ public class ProgressContext {
     private ProgressUIConfig uiConfig;
     
     /**
-     * Construtor padrão da classe ProgressContext.
-     * 
-     * <p>Inicializa o contexto de progresso com as estratégias padrão
-     * e configura a interface do usuário.</p>
+     * Construtor da classe ProgressContext.
+     *
+     * @param fieldService serviço de campos para cálculo de progresso dinâmico
      */
-    public ProgressContext() {
+    public ProgressContext(FieldService fieldService) {
         this.strategies = new HashMap<>();
-        initializeStrategies();
+        initializeStrategies(fieldService);
     }
-    
+
     /**
      * Inicializa as estratégias disponíveis.
      */
-    private void initializeStrategies() {
-        strategies.put(ProgressType.PERCENTAGE, new PercentageProgressStrategy());
+    private void initializeStrategies(FieldService fieldService) {
+        strategies.put(ProgressType.PERCENTAGE, new PercentageProgressStrategy(fieldService));
         strategies.put(ProgressType.NONE, new NoProgressStrategy());
-        strategies.put(ProgressType.CHECKLIST, new ChecklistProgressStrategy());
+        strategies.put(ProgressType.CHECKLIST, new ChecklistProgressStrategy(fieldService));
+        strategies.put(ProgressType.TOTAL, new TotalProgressStrategy(fieldService));
+        strategies.put(ProgressType.FIELDS, new FieldsProgressStrategy(fieldService));
     }
     
     /**
@@ -69,16 +71,17 @@ public class ProgressContext {
     
     /**
      * Atualiza a exibição do progresso com os dados fornecidos.
-     * 
+     *
      * @param totalUnits unidades totais
      * @param currentUnits unidades atuais
      * @param columnKind tipo da coluna
+     * @param cardId identificador do card (necessário para estratégias baseadas em campos)
      */
-    public void updateDisplay(Integer totalUnits, Integer currentUnits, BoardColumnKindEnum columnKind) {
+    public void updateDisplay(Integer totalUnits, Integer currentUnits, BoardColumnKindEnum columnKind, Long cardId) {
         if (currentStrategy == null || uiConfig == null) {
             return;
         }
-        
+
         // Calcular progresso percentual para qualquer tipo que tenha unidades válidas
         Double progressPercentage = null;
         if (currentStrategy.isEnabled()
@@ -86,17 +89,20 @@ public class ProgressContext {
             int current = currentUnits != null ? currentUnits : 0;
             progressPercentage = Math.min(100.0, (double) current / totalUnits * 100);
         }
-        
+
         // Determinar status baseado na coluna
         String statusText = getStatusText(columnKind);
         String statusCssClass = getStatusCssClass(columnKind);
-        
-        // Criar dados de exibição
+
+        // Criar dados de exibição (com cardId para estratégias baseadas em fields)
         ProgressDisplayData displayData = new ProgressDisplayData(
-            totalUnits, currentUnits, progressPercentage, statusText, statusCssClass
+            cardId, totalUnits, currentUnits, progressPercentage, statusText, statusCssClass
         );
-        
-        // Atualizar a UI
+
+        // Permitir que a estratégia atualize o progresso (ex: buscar do banco)
+        currentStrategy.updateDisplay(displayData);
+
+        // Atualizar a UI com os dados (possivelmente modificados pela estratégia)
         updateUIFromData(displayData);
     }
     

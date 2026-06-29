@@ -161,10 +161,8 @@ public class CardViewController {
         setupChecklistComponent();
         setupDatePickers();
         
-        // Inicializar ProgressContext
-        progressContext = new ProgressContext();
-        progressContext.setUIConfig(createProgressUIConfig());
-        
+        // ProgressContext é inicializado em setData() quando facade está disponível
+
         // Garantir que os controles de movimentação estejam configurados corretamente
         moveControlsBox.setVisible(false);
         moveControlsBox.setManaged(false);
@@ -625,7 +623,11 @@ public class CardViewController {
         this.facade = facade;
         this.cardData = card;
         this.onSaveCallback = onSaveCallback;
-        
+
+        // Inicializar ProgressContext agora que facade está disponível
+        progressContext = new ProgressContext(facade.getFieldService());
+        progressContext.setUIConfig(createProgressUIConfig());
+
         // Inicializar o checklist se ainda não foi inicializado
         initializeChecklistIfNeeded();
         
@@ -810,9 +812,10 @@ public class CardViewController {
         progressContext.setStrategy(card.progressType());
         progressContext.configureUI();
         progressContext.updateDisplay(
-            card.totalUnits(), 
-            card.currentUnits(), 
-            card.columnKind()
+            card.totalUnits(),
+            card.currentUnits(),
+            card.columnKind(),
+            card.id()
         );
         
         // Atualizar valores dos spinners apenas se o progresso estiver habilitado
@@ -835,7 +838,7 @@ public class CardViewController {
             try {
                 // Inicializar o controller do checklist
                 ChecklistItemService checklistItemService = new ChecklistItemService(
-                    facade.getChecklistItemRepository()
+                    facade.getFieldService()
                 );
                 checklistViewController.initialize(checklistItemService);
             } catch (Exception e) {
