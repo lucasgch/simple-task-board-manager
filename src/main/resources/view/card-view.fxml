@@ -131,6 +131,13 @@
             </VBox.margin>
         </VBox>
 
+        <!-- Container para campos de progresso percentual -->
+        <VBox fx:id="fieldContainer" managed="false" visible="false" spacing="8">
+            <VBox.margin>
+                <Insets top="5.0" />
+            </VBox.margin>
+        </VBox>
+
         <!-- Seção de agendamento e vencimento (apenas no modo de edição) -->
         <VBox fx:id="schedulingSection" spacing="5" styleClass="progress-section" managed="false" visible="false">
             <VBox.margin>

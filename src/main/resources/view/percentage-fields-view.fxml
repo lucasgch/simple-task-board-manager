@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.desviante.view.component.FieldViewController"
+      fx:id="fieldContainer" spacing="8" styleClass="checklist-container">
+
+    <!-- Cabeçalho -->
+    <HBox spacing="8" alignment="CENTER_LEFT" styleClass="checklist-header">
+        <Label text="Campos de Progresso" styleClass="checklist-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="progressLabel" text="0.0%" styleClass="checklist-progress"/>
+    </HBox>
+
+    <!-- Lista de campos (populada dinamicamente) -->
+    <VBox fx:id="fieldsContainer" spacing="4" styleClass="checklist-items"/>
+
+    <!-- Formulário para adicionar campo -->
+    <HBox spacing="6" alignment="CENTER_LEFT" styleClass="add-item-container">
+        <TextField fx:id="labelTextField" promptText="Nome do campo..." styleClass="new-item-input" HBox.hgrow="ALWAYS"/>
+        <Spinner fx:id="totalSpinner" prefWidth="80.0" editable="true"/>
+        <TextField fx:id="unitTextField" promptText="Unidade" prefWidth="70.0" styleClass="new-item-input"/>
+        <Button fx:id="addFieldButton" text="+" styleClass="add-item-button"/>
+    </HBox>
+
+    <!-- Ações -->
+    <HBox spacing="8" alignment="CENTER" styleClass="checklist-actions">
+        <Button fx:id="removeAllButton" text="- Todos" styleClass="remove-all-button"/>
+    </HBox>
+
+</VBox>
