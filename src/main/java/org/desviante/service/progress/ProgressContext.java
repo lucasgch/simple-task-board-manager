@@ -143,14 +143,6 @@ public class ProgressContext {
      * @param data dados para atualização
      */
     private void updateUIFromData(ProgressDisplayData data) {
-        // Atualizar valores dos spinners
-        if (data.getTotalUnits() != null) {
-            uiConfig.getTotalSpinner().getValueFactory().setValue(data.getTotalUnits());
-        }
-        if (data.getCurrentUnits() != null) {
-            uiConfig.getCurrentSpinner().getValueFactory().setValue(data.getCurrentUnits());
-        }
-        
         // Atualizar label de progresso
         if (data.getProgressPercentage() != null) {
             uiConfig.getProgressValueLabel().setText(String.format("%.1f%%", data.getProgressPercentage()));

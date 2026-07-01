@@ -1,6 +1,9 @@
 package org.desviante.service;
 
 import org.desviante.integration.event.card.CardProgressCompletedEvent;
+import org.desviante.integration.event.card.CardProgressRegressedEvent;
+import org.desviante.integration.event.card.CardProgressStartedEvent;
+import org.desviante.integration.event.card.CardProgressZeroedEvent;
 import org.desviante.integration.event.EventPublisher;
 import org.desviante.model.Card;
 import org.desviante.model.Field;
@@ -118,6 +121,9 @@ public class FieldService {
 
             // 4. Verificar e publicar evento se necessário
             checkAndPublishProgressCompletion(field.getCardId(), oldProgress, newProgress);
+            checkAndPublishProgressRegression(field.getCardId(), oldProgress, newProgress);
+            checkAndPublishProgressStart(field.getCardId(), oldProgress, newProgress);
+            checkAndPublishProgressZeroed(field.getCardId(), oldProgress, newProgress);
         }
 
         return updated;
@@ -464,6 +470,160 @@ public class FieldService {
                 }
             } catch (Exception e) {
                 log.error("Erro ao publicar CardProgressCompletedEvent para card {}: {}",
+                        cardId, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Verifica se houve transição de 100% para menos de 100% de progresso e publica evento se necessário.
+     *
+     * <p>Detecta quando o progresso muda de 100% ou mais para menos de 100%,
+     * indicando que o card deixou de estar concluído. Publica CardProgressRegressedEvent
+     * apenas para cards com ProgressType habilitado (não NONE).</p>
+     *
+     * @param cardId identificador do card
+     * @param oldProgress progresso antes da atualização
+     * @param newProgress progresso depois da atualização
+     */
+    private void checkAndPublishProgressRegression(Long cardId, Double oldProgress, Double newProgress) {
+        // Verificar transição >= 100% → < 100%
+        if (oldProgress != null && oldProgress >= 100.0 &&
+            newProgress != null && newProgress < 100.0) {
+
+            try {
+                // Buscar card para obter ProgressType
+                Optional<Card> cardOpt = cardService.getCardById(cardId);
+                if (cardOpt.isEmpty()) {
+                    log.warn("Card {} não encontrado ao tentar publicar CardProgressRegressedEvent", cardId);
+                    return;
+                }
+
+                Card card = cardOpt.get();
+
+                // Apenas publicar se card é progressable e não é NONE
+                if (card.isProgressable() && card.getProgressType() != ProgressType.NONE) {
+                    log.info("Card {} caiu abaixo de 100% de progresso (tipo: {}). Publicando evento...",
+                            cardId, card.getProgressType());
+
+                    CardProgressRegressedEvent event = CardProgressRegressedEvent.builder()
+                            .card(card)
+                            .progressType(card.getProgressType())
+                            .progress(newProgress)
+                            .occurredOn(LocalDateTime.now())
+                            .build();
+
+                    eventPublisher.publish(event);
+
+                    log.debug("CardProgressRegressedEvent publicado para card {}", cardId);
+                } else {
+                    log.debug("Card {} caiu abaixo de 100% mas não é progressable ou é NONE. Evento não publicado.", cardId);
+                }
+            } catch (Exception e) {
+                log.error("Erro ao publicar CardProgressRegressedEvent para card {}: {}",
+                        cardId, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Verifica se houve transição de 0% para mais de 0% de progresso e publica evento se necessário.
+     *
+     * <p>Detecta quando o progresso muda de 0% para um valor maior que 0%,
+     * indicando que o trabalho no card começou. Publica CardProgressStartedEvent
+     * apenas para cards com ProgressType habilitado (não NONE).</p>
+     *
+     * @param cardId identificador do card
+     * @param oldProgress progresso antes da atualização
+     * @param newProgress progresso depois da atualização
+     */
+    private void checkAndPublishProgressStart(Long cardId, Double oldProgress, Double newProgress) {
+        // Verificar transição <= 0% → > 0%
+        if (oldProgress != null && oldProgress <= 0.0 &&
+            newProgress != null && newProgress > 0.0) {
+
+            try {
+                // Buscar card para obter ProgressType
+                Optional<Card> cardOpt = cardService.getCardById(cardId);
+                if (cardOpt.isEmpty()) {
+                    log.warn("Card {} não encontrado ao tentar publicar CardProgressStartedEvent", cardId);
+                    return;
+                }
+
+                Card card = cardOpt.get();
+
+                // Apenas publicar se card é progressable e não é NONE
+                if (card.isProgressable() && card.getProgressType() != ProgressType.NONE) {
+                    log.info("Card {} saiu de 0% de progresso (tipo: {}). Publicando evento...",
+                            cardId, card.getProgressType());
+
+                    CardProgressStartedEvent event = CardProgressStartedEvent.builder()
+                            .card(card)
+                            .progressType(card.getProgressType())
+                            .progress(newProgress)
+                            .occurredOn(LocalDateTime.now())
+                            .build();
+
+                    eventPublisher.publish(event);
+
+                    log.debug("CardProgressStartedEvent publicado para card {}", cardId);
+                } else {
+                    log.debug("Card {} saiu de 0% mas não é progressable ou é NONE. Evento não publicado.", cardId);
+                }
+            } catch (Exception e) {
+                log.error("Erro ao publicar CardProgressStartedEvent para card {}: {}",
+                        cardId, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Verifica se houve transição de mais de 0% para exatamente 0% de progresso e
+     * publica evento se necessário.
+     *
+     * <p>Detecta quando o progresso muda de um valor maior que 0% para 0%,
+     * indicando que o trabalho no card foi totalmente desfeito. Publica
+     * CardProgressZeroedEvent apenas para cards com ProgressType habilitado (não NONE).</p>
+     *
+     * @param cardId identificador do card
+     * @param oldProgress progresso antes da atualização
+     * @param newProgress progresso depois da atualização
+     */
+    private void checkAndPublishProgressZeroed(Long cardId, Double oldProgress, Double newProgress) {
+        // Verificar transição > 0% → <= 0%
+        if (oldProgress != null && oldProgress > 0.0 &&
+            newProgress != null && newProgress <= 0.0) {
+
+            try {
+                // Buscar card para obter ProgressType
+                Optional<Card> cardOpt = cardService.getCardById(cardId);
+                if (cardOpt.isEmpty()) {
+                    log.warn("Card {} não encontrado ao tentar publicar CardProgressZeroedEvent", cardId);
+                    return;
+                }
+
+                Card card = cardOpt.get();
+
+                // Apenas publicar se card é progressable e não é NONE
+                if (card.isProgressable() && card.getProgressType() != ProgressType.NONE) {
+                    log.info("Card {} voltou a 0% de progresso (tipo: {}). Publicando evento...",
+                            cardId, card.getProgressType());
+
+                    CardProgressZeroedEvent event = CardProgressZeroedEvent.builder()
+                            .card(card)
+                            .progressType(card.getProgressType())
+                            .progress(newProgress)
+                            .occurredOn(LocalDateTime.now())
+                            .build();
+
+                    eventPublisher.publish(event);
+
+                    log.debug("CardProgressZeroedEvent publicado para card {}", cardId);
+                } else {
+                    log.debug("Card {} voltou a 0% mas não é progressable ou é NONE. Evento não publicado.", cardId);
+                }
+            } catch (Exception e) {
+                log.error("Erro ao publicar CardProgressZeroedEvent para card {}: {}",
                         cardId, e.getMessage(), e);
             }
         }

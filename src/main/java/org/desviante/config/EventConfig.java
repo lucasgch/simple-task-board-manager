@@ -6,6 +6,12 @@ import org.desviante.integration.event.EventPublisher;
 import org.desviante.integration.observer.CalendarSyncObserver;
 import org.desviante.integration.observer.CardCompletionUIObserver;
 import org.desviante.integration.observer.CardProgressCompletionObserver;
+import org.desviante.integration.observer.CardProgressRegressionObserver;
+import org.desviante.integration.observer.CardProgressResetObserver;
+import org.desviante.integration.observer.CardProgressStartObserver;
+import org.desviante.integration.observer.CardRegressionUIObserver;
+import org.desviante.integration.observer.CardResetConfirmationUIObserver;
+import org.desviante.integration.observer.CardStartUIObserver;
 import org.desviante.integration.observer.GoogleTasksSyncObserver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -31,6 +37,12 @@ public class EventConfig {
     private final CalendarSyncObserver calendarSyncObserver;
     private final CardProgressCompletionObserver cardProgressCompletionObserver;
     private final CardCompletionUIObserver cardCompletionUIObserver;
+    private final CardProgressRegressionObserver cardProgressRegressionObserver;
+    private final CardRegressionUIObserver cardRegressionUIObserver;
+    private final CardProgressStartObserver cardProgressStartObserver;
+    private final CardStartUIObserver cardStartUIObserver;
+    private final CardProgressResetObserver cardProgressResetObserver;
+    private final CardResetConfirmationUIObserver cardResetConfirmationUIObserver;
     
     /**
      * Registra automaticamente os observers no EventPublisher quando o contexto Spring é inicializado.
@@ -58,6 +70,30 @@ public class EventConfig {
             // Registrar CardCompletionUIObserver
             eventPublisher.subscribe(cardCompletionUIObserver);
             log.info("✅ CardCompletionUIObserver registrado com sucesso");
+
+            // Registrar CardProgressRegressionObserver
+            eventPublisher.subscribe(cardProgressRegressionObserver);
+            log.info("✅ CardProgressRegressionObserver registrado com sucesso");
+
+            // Registrar CardRegressionUIObserver
+            eventPublisher.subscribe(cardRegressionUIObserver);
+            log.info("✅ CardRegressionUIObserver registrado com sucesso");
+
+            // Registrar CardProgressStartObserver
+            eventPublisher.subscribe(cardProgressStartObserver);
+            log.info("✅ CardProgressStartObserver registrado com sucesso");
+
+            // Registrar CardStartUIObserver
+            eventPublisher.subscribe(cardStartUIObserver);
+            log.info("✅ CardStartUIObserver registrado com sucesso");
+
+            // Registrar CardProgressResetObserver
+            eventPublisher.subscribe(cardProgressResetObserver);
+            log.info("✅ CardProgressResetObserver registrado com sucesso");
+
+            // Registrar CardResetConfirmationUIObserver
+            eventPublisher.subscribe(cardResetConfirmationUIObserver);
+            log.info("✅ CardResetConfirmationUIObserver registrado com sucesso");
 
             log.info("🎉 Todos os observers foram registrados com sucesso! Total: {}", eventPublisher.getObserverCount());
 

@@ -16,6 +16,7 @@ import org.desviante.service.FieldService;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 public class FieldViewController {
 
@@ -23,7 +24,7 @@ public class FieldViewController {
     @FXML private Label progressLabel;
     @FXML private VBox fieldsContainer;
     @FXML private TextField labelTextField;
-    @FXML private Spinner<Integer> totalSpinner;
+    @FXML private TextField totalField;
     @FXML private TextField descriptionTextField;
     @FXML private Button addFieldButton;
     @FXML private Button removeAllButton;
@@ -41,9 +42,45 @@ public class FieldViewController {
 
     public void initialize(FieldService fieldService) {
         this.fieldService = fieldService;
-        totalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 9999, 1));
-        totalSpinner.setEditable(true);
+        totalField.setText("1");
+        totalField.setTextFormatter(new TextFormatter<>(numericFilter()));
+        totalField.setTooltip(new Tooltip("Valor total do campo de progresso. Mínimo: 1."));
         setupEventHandlers();
+    }
+
+    /**
+     * Filtro de {@link TextFormatter} que só aceita dígitos (até 6 casas) ou texto vazio,
+     * usado para transformar os campos de total/atual em entradas puramente numéricas.
+     *
+     * <p>Substitui os antigos {@code Spinner}s: digitar um número não dispara nenhum
+     * mecanismo de auto-repetição, então não há risco do valor "disparar sozinho" caso
+     * um Alert modal (ex.: notificação de início/conclusão de progresso) roube o foco
+     * no meio da digitação — o pior cenário é apenas a perda de foco do campo, que é
+     * um evento único e idempotente.</p>
+     */
+    private static UnaryOperator<TextFormatter.Change> numericFilter() {
+        return change -> {
+            String newText = change.getControlNewText();
+            if (newText.isEmpty() || newText.matches("\\d{0,6}")) {
+                return change;
+            }
+            return null;
+        };
+    }
+
+    /**
+     * Faz o parse de um campo numérico de texto, retornando {@code fallback} caso o
+     * texto esteja vazio ou não seja um inteiro válido.
+     */
+    private static int parseIntOrDefault(String text, int fallback) {
+        if (text == null || text.trim().isEmpty()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 
     private void setupEventHandlers() {
@@ -129,42 +166,87 @@ public class FieldViewController {
         int totalVal = field.getTotal() != null && field.getTotal() > 0 ? field.getTotal() : 1;
         int currentVal = field.getCurrent() != null ? Math.min(field.getCurrent(), totalVal) : 0;
 
-        Spinner<Integer> totalSpin = new Spinner<>(1, 9999, totalVal);
-        totalSpin.setEditable(true);
-        totalSpin.setPrefWidth(90);
+        // Campos numéricos simples em vez de Spinner<Integer>. Spinners têm botões de
+        // seta com auto-repeat (um Timeline de ciclo indefinido no JavaFX) que só para
+        // quando o próprio Spinner recebe o MOUSE_RELEASED; se um Alert modal (notificação
+        // de início/conclusão de progresso) abrir no meio do clique-e-segure, esse evento
+        // é roubado pelo Alert e o auto-repeat nunca é interrompido, fazendo o valor
+        // "disparar sozinho". Um TextField comum não tem nenhum mecanismo de repetição:
+        // cada dígito é um evento único e discreto, então esse tipo de bug deixa de ser
+        // estruturalmente possível.
+        TextField totalInput = new TextField(String.valueOf(totalVal));
+        totalInput.setPromptText("Total");
+        totalInput.setPrefWidth(70);
+        totalInput.setTextFormatter(new TextFormatter<>(numericFilter()));
 
-        Spinner<Integer> currentSpin = new Spinner<>(0, totalVal, currentVal);
-        currentSpin.setEditable(true);
-        currentSpin.setPrefWidth(90);
+        TextField currentInput = new TextField(String.valueOf(currentVal));
+        currentInput.setPromptText("Atual");
+        currentInput.setPrefWidth(70);
+        currentInput.setTextFormatter(new TextFormatter<>(numericFilter()));
 
         HBox totalRow = new HBox(10);
         totalRow.setAlignment(Pos.CENTER_LEFT);
         Label totalLbl = new Label("Total:");
         totalLbl.getStyleClass().add("progress-label");
-        totalRow.getChildren().addAll(totalLbl, totalSpin);
+        totalRow.getChildren().addAll(totalLbl, totalInput);
 
         HBox currentRow = new HBox(10);
         currentRow.setAlignment(Pos.CENTER_LEFT);
         Label currentLbl = new Label("Atual:");
         currentLbl.getStyleClass().add("progress-label");
-        currentRow.getChildren().addAll(currentLbl, currentSpin);
+        currentRow.getChildren().addAll(currentLbl, currentInput);
 
-        totalSpin.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal == null) return;
-            field.setTotal(newVal);
-            int clamped = Math.min(currentSpin.getValue(), newVal);
-            currentSpin.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, newVal, clamped));
-            field.setCurrent(clamped);
+        // Atualiza o campo em memória e o label a cada tecla digitada (feedback visual
+        // instantâneo). A persistência no banco (e a consequente verificação/publicação
+        // de eventos de progresso) só acontece quando o campo perde o foco ou quando o
+        // usuário pressiona Enter — nunca a cada tecla — evitando escritas excessivas no
+        // banco sem depender de nenhum mecanismo de auto-repeat que possa travar.
+        totalInput.textProperty().addListener((obs, oldVal, newVal) -> {
+            int total = Math.max(1, parseIntOrDefault(newVal, field.getTotal() != null ? field.getTotal() : 1));
+            field.setTotal(total);
+            int current = parseIntOrDefault(currentInput.getText(), field.getCurrent() != null ? field.getCurrent() : 0);
+            if (current > total) {
+                current = total;
+                currentInput.setText(String.valueOf(current));
+            }
+            field.setCurrent(current);
             fieldProgressLabel.setText(String.format("%.1f%%", field.getProgressPercentage()));
-            persistField(field);
         });
 
-        currentSpin.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal == null) return;
-            field.setCurrent(newVal);
+        currentInput.textProperty().addListener((obs, oldVal, newVal) -> {
+            int total = Math.max(1, parseIntOrDefault(totalInput.getText(), field.getTotal() != null ? field.getTotal() : 1));
+            int current = parseIntOrDefault(newVal, field.getCurrent() != null ? field.getCurrent() : 0);
+            if (current > total) {
+                current = total;
+                currentInput.setText(String.valueOf(current));
+                return; // o setText acima já vai re-disparar este listener com o valor já clamped
+            }
+            field.setCurrent(current);
             fieldProgressLabel.setText(String.format("%.1f%%", field.getProgressPercentage()));
-            persistField(field);
         });
+
+        // Persiste ao perder o foco...
+        totalInput.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (wasFocused && !isFocused) {
+                if (totalInput.getText() == null || totalInput.getText().isBlank()) {
+                    totalInput.setText(String.valueOf(field.getTotal() != null ? field.getTotal() : 1));
+                }
+                persistField(field);
+            }
+        });
+        currentInput.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (wasFocused && !isFocused) {
+                if (currentInput.getText() == null || currentInput.getText().isBlank()) {
+                    currentInput.setText(String.valueOf(field.getCurrent() != null ? field.getCurrent() : 0));
+                }
+                persistField(field);
+            }
+        });
+        // ...e também ao pressionar Enter, cobrindo o caso em que o usuário digita um
+        // valor e nunca chega a clicar em outro lugar (ex.: fecha o card em seguida) —
+        // sem isso a mudança poderia nunca ser persistida nem disparar a notificação.
+        totalInput.setOnAction(e -> persistField(field));
+        currentInput.setOnAction(e -> persistField(field));
 
         HBox progressRow = new HBox(5);
         progressRow.setAlignment(Pos.CENTER_LEFT);
@@ -300,7 +382,7 @@ public class FieldViewController {
             showError("Campo inválido", "O nome do campo não pode estar vazio.");
             return;
         }
-        int total = totalSpinner.getValue();
+        int total = Math.max(1, parseIntOrDefault(totalField.getText(), 1));
         String description = descriptionTextField.getText().trim();
 
         try {
@@ -308,7 +390,7 @@ public class FieldViewController {
             fieldService.createPercentageField(currentCardId, label, total, description, nextOrder);
             labelTextField.clear();
             descriptionTextField.clear();
-            totalSpinner.getValueFactory().setValue(1);
+            totalField.setText("1");
             refreshFields();
         } catch (Exception e) {
             showError("Erro ao adicionar campo", e.getMessage());
