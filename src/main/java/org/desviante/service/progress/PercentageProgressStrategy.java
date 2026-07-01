@@ -65,12 +65,6 @@ public class PercentageProgressStrategy implements ProgressStrategy {
         config.getProgressContainer().setVisible(true);
         config.getProgressContainer().setManaged(true);
 
-        // Ocultar spinners - o progresso é calculado automaticamente dos campos percentuais
-        config.getTotalLabel().setVisible(false);
-        config.getTotalSpinner().setVisible(false);
-        config.getCurrentLabel().setVisible(false);
-        config.getCurrentSpinner().setVisible(false);
-
         // Mostrar label de progresso
         config.getProgressLabel().setVisible(true);
         config.getProgressLabel().setManaged(true);

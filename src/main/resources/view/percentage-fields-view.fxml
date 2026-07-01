@@ -20,8 +20,9 @@
 
     <!-- Formulário para adicionar campo -->
     <HBox spacing="6" alignment="CENTER_LEFT" styleClass="add-item-container">
-        <TextField fx:id="labelTextField" promptText="Nome do campo..." styleClass="new-item-input" HBox.hgrow="ALWAYS"/>
-        <Spinner fx:id="totalSpinner" prefWidth="80.0" editable="true"/>
+        <TextField fx:id="labelTextField" promptText="Nome do campo percentual ao adicionar novo..." styleClass="new-item-input" HBox.hgrow="ALWAYS"/>
+        <Label text="Total:" style="-fx-font-size: 11px; -fx-text-fill: #666666;"/>
+        <TextField fx:id="totalField" promptText="Total (mín. 1)" prefWidth="70.0" styleClass="new-item-input"/>
         <TextField fx:id="descriptionTextField" promptText="Descrição" prefWidth="130.0" styleClass="new-item-input"/>
         <Button fx:id="addFieldButton" text="+" styleClass="add-item-button"/>
     </HBox>

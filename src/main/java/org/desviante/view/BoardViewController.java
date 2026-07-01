@@ -166,6 +166,8 @@ public class BoardViewController {
     public void initialize() {
         System.out.println("BoardViewController inicializado.");
         uiEventBridge.setOnCardAutoCompleted(this::reloadCurrentKanban);
+        uiEventBridge.setOnCardAutoRegressed(this::reloadCurrentKanban);
+        uiEventBridge.setOnCardAutoStarted(this::reloadCurrentKanban);
         setupBoardsTable();
         setupGroupFilter();
         setupStatusFilter();

@@ -70,22 +70,6 @@
                 <VBox fx:id="progressSection" spacing="5" managed="false" visible="false" styleClass="progress-section">
                     <children>
                         <Label text="Progresso:" styleClass="progress-section-title" />
-                        <VBox spacing="3">
-                            <children>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <children>
-                                        <Label fx:id="totalLabel" text="Total:" styleClass="progress-label" minWidth="50.0" prefWidth="50.0" />
-                                        <Spinner fx:id="totalSpinner" />
-                                    </children>
-                                </HBox>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <children>
-                                        <Label fx:id="currentLabel" text="Atual:" styleClass="progress-label" minWidth="50.0" prefWidth="50.0" />
-                                        <Spinner fx:id="currentSpinner" />
-                                    </children>
-                                </HBox>
-                            </children>
-                        </VBox>
                     </children>
                 </VBox>
                 

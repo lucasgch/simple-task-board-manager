@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class UIEventBridge {
 
     private Runnable onCardAutoCompleted;
+    private Runnable onCardAutoRegressed;
 
     public void setOnCardAutoCompleted(Runnable callback) {
         this.onCardAutoCompleted = callback;
@@ -20,6 +21,28 @@ public class UIEventBridge {
     public void triggerCardAutoCompleted() {
         if (onCardAutoCompleted != null) {
             onCardAutoCompleted.run();
+        }
+    }
+
+    public void setOnCardAutoRegressed(Runnable callback) {
+        this.onCardAutoRegressed = callback;
+    }
+
+    public void triggerCardAutoRegressed() {
+        if (onCardAutoRegressed != null) {
+            onCardAutoRegressed.run();
+        }
+    }
+
+    private Runnable onCardAutoStarted;
+
+    public void setOnCardAutoStarted(Runnable callback) {
+        this.onCardAutoStarted = callback;
+    }
+
+    public void triggerCardAutoStarted() {
+        if (onCardAutoStarted != null) {
+            onCardAutoStarted.run();
         }
     }
 }

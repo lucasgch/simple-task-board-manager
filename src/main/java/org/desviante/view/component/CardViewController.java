@@ -94,12 +94,6 @@ public class CardViewController {
     // Seção de progresso genérica (substitui as seções específicas)
     @FXML private VBox progressSection;
     
-    // Campos genéricos de progresso (substitui os campos específicos)
-    @FXML private Label totalLabel;
-    @FXML private Spinner<Integer> totalSpinner;
-    @FXML private Label currentLabel;
-    @FXML private Spinner<Integer> currentSpinner;
-    
     // Campo de progresso geral
     @FXML private Label progressLabel;
     @FXML private Label progressValueLabel;
@@ -167,7 +161,6 @@ public class CardViewController {
         System.out.println("=== CARDVIEWCONTROLLER INITIALIZE() CHAMADO ===");
         setupDragAndDrop();
         setupEditMode();
-        setupProgressSpinners();
         setupTooltips();
         setupProgressTypeComboBox();
         setupCardTypeComboBox();
@@ -196,8 +189,6 @@ public class CardViewController {
     private ProgressUIConfig createProgressUIConfig() {
         return new ProgressUIConfig(
             progressContainer, progressSection,
-            totalLabel, totalSpinner,
-            currentLabel, currentSpinner,
             progressLabel, progressValueLabel,
             statusValueLabel, progressTypeContainer
         );
@@ -552,136 +543,6 @@ public class CardViewController {
     }
 
     /**
-     * Configura os spinners de progresso com valores padrão e listeners
-     */
-    private void setupProgressSpinners() {
-        // Configurar spinners com valores mínimos apropriados
-        totalSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 9999, 1));
-        currentSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 9999, 0));
-        
-        // Tornar os spinners editáveis para permitir digitação direta
-        totalSpinner.setEditable(true);
-        currentSpinner.setEditable(true);
-        
-        // Configurar editores para os spinners
-        setupSpinnerEditors();
-        
-        // Adicionar listeners para validação em tempo real
-        setupSpinnerValidation();
-        
-        // Adicionar listeners para atualizar o progresso em tempo real
-        totalSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateProgressDisplay());
-        currentSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateProgressDisplay());
-    }
-    
-    /**
-     * Configura os editores dos spinners para permitir digitação direta
-     */
-    private void setupSpinnerEditors() {
-        // Configurar editor para totalSpinner
-        totalSpinner.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            try {
-                if (newVal != null && !newVal.trim().isEmpty()) {
-                    int value = Integer.parseInt(newVal.trim());
-                    if (value >= 1 && value <= 9999) {
-                        totalSpinner.getValueFactory().setValue(value);
-                    } else {
-                        // Valor fora do intervalo válido
-                        showValidationWarning("Total deve ser entre 1 e 9999");
-                        // Restaurar valor anterior
-                        totalSpinner.getEditor().setText(String.valueOf(totalSpinner.getValue()));
-                    }
-                }
-            } catch (NumberFormatException e) {
-                // Valor não é um número válido
-                showValidationWarning("Digite apenas números válidos");
-                // Restaurar valor anterior
-                totalSpinner.getEditor().setText(String.valueOf(totalSpinner.getValue()));
-            }
-        });
-        
-        // Configurar editor para currentSpinner
-        currentSpinner.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            try {
-                if (newVal != null && !newVal.trim().isEmpty()) {
-                    int value = Integer.parseInt(newVal.trim());
-                    if (value >= 0 && value <= 9999) {
-                        currentSpinner.getValueFactory().setValue(value);
-                    } else {
-                        // Valor fora do intervalo válido
-                        showValidationWarning("Valor atual deve ser entre 0 e 9999");
-                        // Restaurar valor anterior
-                        currentSpinner.getEditor().setText(String.valueOf(currentSpinner.getValue()));
-                    }
-                }
-            } catch (NumberFormatException e) {
-                // Valor não é um número válido
-                showValidationWarning("Digite apenas números válidos");
-                // Restaurar valor anterior
-                currentSpinner.getEditor().setText(String.valueOf(currentSpinner.getValue()));
-            }
-        });
-        
-        // Adicionar tooltips informativos
-        Tooltip totalTooltip = new Tooltip("Digite um valor entre 1 e 9999 ou use as setas para ajustar");
-        Tooltip currentTooltip = new Tooltip("Digite um valor entre 0 e 9999 ou use as setas para ajustar");
-        
-        Tooltip.install(totalSpinner, totalTooltip);
-        Tooltip.install(currentSpinner, currentTooltip);
-    }
-    
-    /**
-     * Configura validações em tempo real para os spinners de progresso.
-     */
-    private void setupSpinnerValidation() {
-        // Validação: current não pode ser maior que total
-        currentSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-            Integer total = totalSpinner.getValue();
-            if (total != null && newVal != null && newVal > total) {
-                currentSpinner.getValueFactory().setValue(total);
-                showValidationWarning("Valor atual ajustado para o total.");
-            }
-        });
-        
-        // Validação: se total for 0 ou null, current deve ser 0
-        totalSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-            Integer current = currentSpinner.getValue();
-            if ((newVal == null || newVal <= 0) && current != null && current > 0) {
-                currentSpinner.getValueFactory().setValue(0);
-                showValidationWarning("Valor atual ajustado para 0 pois o total é inválido.");
-            }
-        });
-    }
-    
-    /**
-     * Mostra um aviso de validação temporário.
-     */
-    private void showValidationWarning(String message) {
-        // Criar um tooltip temporário com estilo destacado
-        Tooltip tooltip = new Tooltip(message);
-        tooltip.setShowDelay(javafx.util.Duration.millis(100));
-        tooltip.setShowDuration(javafx.util.Duration.seconds(4));
-        
-        // Aplicar estilo CSS para destacar o tooltip
-        tooltip.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold;");
-        
-        // Mostrar o tooltip no card atual
-        if (cardPane != null) {
-            Tooltip.install(cardPane, tooltip);
-            
-            // Remover o tooltip após 4 segundos
-            new Thread(() -> {
-                try {
-                    Thread.sleep(4000);
-                    Platform.runLater(() -> Tooltip.uninstall(cardPane, tooltip));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }).start();
-        }
-    }
-
-    /**
      * Define os dados do card e configura o controlador.
      * 
      * @param facade fachada principal para gerenciamento de tarefas
@@ -892,18 +753,10 @@ public class CardViewController {
             card.columnKind(),
             card.id()
         );
-        
-        // Atualizar valores dos spinners apenas se o progresso estiver habilitado
-        if (progressContext.isProgressEnabled()) {
-            updateSpinnerValues(card);
-        }
-        
+
         // Gerenciar componentes de checklist e campos percentuais
         updateChecklistComponent(card);
         updateFieldComponent(card);
-        
-        // Atualizar o display de progresso após configurar tudo
-        updateProgressDisplay();
     }
     
     /**
@@ -937,53 +790,6 @@ public class CardViewController {
         checklistContainer.setManaged(hasGroups);
     }
 
-    /**
-     * Atualiza os valores dos spinners baseado nos dados do card
-     */
-    private void updateSpinnerValues(CardDetailDTO card) {
-        // Para CHECKLIST, não atualizar spinners pois o progresso é calculado automaticamente
-        if (card.progressType() == ProgressType.CHECKLIST) {
-            return;
-        }
-        
-        // Usar os valores de progresso do DTO
-        Integer totalUnits = card.totalUnits();
-        Integer currentUnits = card.currentUnits();
-        
-        // Garantir que total seja sempre válido (mínimo 1)
-        int total = (totalUnits != null && totalUnits > 0) ? totalUnits : 1;
-        int current = (currentUnits != null && currentUnits >= 0) ? currentUnits : 0;
-        
-        // Garantir que current não seja maior que total
-        if (current > total) {
-            current = total;
-        }
-        
-        // Atualizar todos os spinners com os valores apropriados
-        totalSpinner.getValueFactory().setValue(total);
-        currentSpinner.getValueFactory().setValue(current);
-        
-        // Desabilitar spinners em modo de exibição (somente leitura)
-        setSpinnersEditable(false);
-    }
-
-    /**
-     * Define se os spinners estão habilitados ou somente leitura
-     */
-    private void setSpinnersEditable(boolean editable) {
-        totalSpinner.setDisable(!editable);
-        currentSpinner.setDisable(!editable);
-    }
-
-    /**
-     * Atualiza o display de progresso baseado nos valores dos spinners
-     */
-    private void updateProgressDisplay() {
-        // O display de progresso é gerenciado por ProgressContext.updateDisplay()
-        // via a estratégia ativa. Este método é mantido apenas para compatibilidade
-        // com os listeners dos spinners (que são ocultados e não afetam o cálculo).
-    }
-    
     /**
      * Lógica atualizada para gerenciar a visibilidade de cada linha de data.
      */
@@ -1133,15 +939,10 @@ public class CardViewController {
             progressContainer.setVisible(true);
             progressContainer.setManaged(true);
 
-            // A seção com spinners manuais nunca é exibida: o progresso é sempre
+            // A seção de progresso manual nunca é exibida: o progresso é sempre
             // calculado a partir dos campos (checklist e percentuais)
             progressSection.setVisible(false);
             progressSection.setManaged(false);
-            totalLabel.setVisible(false);
-            totalSpinner.setVisible(false);
-            currentLabel.setVisible(false);
-            currentSpinner.setVisible(false);
-            setSpinnersEditable(false);
 
             // Mostrar "Status:" sempre em modo de edição
             statusValueLabel.getParent().setVisible(true);
@@ -1185,14 +986,9 @@ public class CardViewController {
             progressContainer.setVisible(true);
             progressContainer.setManaged(true);
 
-            // Spinners manuais sempre ocultos: progresso vem dos campos
+            // Seção de progresso manual sempre oculta: progresso vem dos campos
             progressSection.setVisible(false);
             progressSection.setManaged(false);
-            totalLabel.setVisible(false);
-            totalSpinner.setVisible(false);
-            currentLabel.setVisible(false);
-            currentSpinner.setVisible(false);
-            setSpinnersEditable(false);
 
             // Garantir que o status seja sempre visível em modo de exibição
             if (statusValueLabel.getParent() != null) {
@@ -1226,9 +1022,10 @@ public class CardViewController {
             selectedProgressType = ProgressType.NONE; // Valor padrão
         }
         
-        // O progresso é sempre calculado pelos campos (checklist/percentuais) via estratégia
-        Integer totalUnits = totalSpinner.getValue();
-        Integer currentUnits = currentSpinner.getValue();
+        // O progresso é sempre calculado pelos campos (checklist/percentuais) via estratégia;
+        // total/current units são apenas preservados do estado atual do card
+        Integer totalUnits = cardData.totalUnits();
+        Integer currentUnits = cardData.currentUnits();
         
         // Usar ProgressContext para validação
         ProgressInputData inputData = new ProgressInputData(totalUnits, currentUnits, newTitle, newDescription);
