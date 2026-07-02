@@ -8,7 +8,6 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
@@ -16,58 +15,52 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.desviante.view.BoardViewController">
     <top>
-        <!-- Seção <top> com a ToolBar e os botões -->
-        <VBox>
+        <!-- Seção <top> com a barra de ferramentas e os botões -->
+        <HBox styleClass="topbar" alignment="CENTER_LEFT">
             <children>
-                <Label style="-fx-font-size: 12px; -fx-font-weight: bold;" text="">
-                    <padding>
-                        <Insets bottom="0" left="10" right="10" top="5" />
-                    </padding>
-                </Label>
-                <ToolBar>
-                    <items>
-                        <Button fx:id="createBoardButton" onAction="#handleCreateBoard" text="Criar Board" />
-                        <Button fx:id="editBoardButton" onAction="#handleEditBoard" text="Editar Board" />
-                        <Button fx:id="deleteBoardButton" onAction="#handleDeleteBoard" text="Excluir Board" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="createGroupButton" onAction="#handleCreateGroup" text="Criar Grupo" styleClass="create-group-button" />
-                        <Button fx:id="editGroupButton" onAction="#handleEditGroup" text="Editar Grupo" styleClass="edit-group-button" />
-                        <Separator orientation="VERTICAL" />
-                        <Label text="Filtrar por Grupo:" styleClass="filter-label" />
-                        <ComboBox fx:id="groupFilterComboBox" onAction="#handleGroupFilterChange" promptText="Todos os Grupos" styleClass="group-filter-combo" />
-                        <Separator orientation="VERTICAL" />
-                        <Label text="Filtrar de Board:" styleClass="filter-label" />
-                        <ComboBox fx:id="statusFilterComboBox" onAction="#handleStatusFilterChange" promptText="Todos os Status" styleClass="status-filter-combo" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="refreshButton" onAction="#handleRefresh" text="Atualizar" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="customTypesButton" onAction="#handleCardTypes" text="Tipos de Card" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="preferencesButton" onAction="#handlePreferences" text="Preferências" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="googleTaskButton" onAction="#handleGoogleTask" text="Google Task" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="calendarButton" onAction="#handleOpenCalendar" text="📅 Calendário" styleClass="calendar-button" />
-                        <Separator orientation="VERTICAL" />
-                        <Button fx:id="aboutButton" onAction="#handleAbout" text="Sobre" />
-                    </items>
-                </ToolBar>
+                <Label text="T" styleClass="brand-badge" />
+                <Button fx:id="createBoardButton" onAction="#handleCreateBoard" text="Criar Board" styleClass="btn-primary" />
+                <Button fx:id="editBoardButton" onAction="#handleEditBoard" text="Editar Board" styleClass="btn-outline" />
+                <Button fx:id="deleteBoardButton" onAction="#handleDeleteBoard" text="Excluir Board" styleClass="btn-outline" />
+                <Separator orientation="VERTICAL" />
+                <Button fx:id="createGroupButton" onAction="#handleCreateGroup" text="Criar Grupo" styleClass="btn-outline" />
+                <Button fx:id="editGroupButton" onAction="#handleEditGroup" text="Editar Grupo" styleClass="btn-outline" />
+                <Separator orientation="VERTICAL" />
+                <HBox styleClass="filter-chip">
+                    <children>
+                        <Label text="Grupo" styleClass="label-key" />
+                        <ComboBox fx:id="groupFilterComboBox" onAction="#handleGroupFilterChange" promptText="Todos os Grupos" />
+                    </children>
+                </HBox>
+                <HBox styleClass="filter-chip">
+                    <children>
+                        <Label text="Board" styleClass="label-key" />
+                        <ComboBox fx:id="statusFilterComboBox" onAction="#handleStatusFilterChange" promptText="Todos os Status" />
+                    </children>
+                </HBox>
+                <Separator orientation="VERTICAL" />
+                <Button fx:id="refreshButton" onAction="#handleRefresh" text="Atualizar" styleClass="btn-ghost" />
+                <Button fx:id="customTypesButton" onAction="#handleCardTypes" text="Tipos de Card" styleClass="btn-outline" />
+                <Button fx:id="preferencesButton" onAction="#handlePreferences" text="Preferências" styleClass="btn-outline" />
+                <Button fx:id="googleTaskButton" onAction="#handleGoogleTask" text="Google Task" styleClass="btn-ghost" />
+                <Button fx:id="calendarButton" onAction="#handleOpenCalendar" text="📅 Calendário" styleClass="btn-ghost" />
+                <Button fx:id="aboutButton" onAction="#handleAbout" text="Sobre" styleClass="btn-ghost" />
             </children>
-        </VBox>
+        </HBox>
     </top>
     <center>
         <!-- Seção <center> -->
-        <VBox spacing="10" BorderPane.alignment="CENTER">
+        <VBox spacing="10" styleClass="panel" BorderPane.alignment="CENTER">
             <padding>
                 <Insets top="10" />
             </padding>
             <children>
-                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Meus Boards">
+                <Label styleClass="panel-title" text="Meus Boards">
                     <VBox.margin>
                         <Insets left="10" />
                     </VBox.margin>
                 </Label>
-                <TableView fx:id="boardsTableView" prefHeight="200.0" minHeight="120.0" VBox.vgrow="NEVER">
+                <TableView fx:id="boardsTableView" styleClass="boards-table" prefHeight="200.0" minHeight="120.0" VBox.vgrow="NEVER">
                     <columns>
                         <!-- Coluna do ícone do grupo -->
                         <TableColumn fx:id="boardGroupIconColumn" prefWidth="50.0" text="Ícone" />

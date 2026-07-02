@@ -30,3 +30,77 @@
     -fx-background-color: -app-bg;
     -fx-font-size: 13px;
 }
+
+/* ---- Barra do topo ---- */
+.topbar {
+    -fx-background-color: -panel;
+    -fx-border-color: transparent transparent -border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 12 18;
+    -fx-spacing: 14;
+}
+.brand-badge {
+    -fx-background-color: -accent;
+    -fx-background-radius: 8;
+    -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30;
+    -fx-alignment: CENTER;
+    -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
+}
+
+/* ---- Botões ---- */
+.btn-primary {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(30,60,140,0.18), 4, 0, 0, 1);
+}
+.btn-primary:hover { -fx-background-color: derive(-accent, 8%); }
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-mut;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+
+.btn-outline {
+    -fx-background-color: -panel;
+    -fx-text-fill: #3a424e;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 13;
+    -fx-cursor: hand;
+}
+.btn-outline:hover { -fx-border-color: #c3cad4; -fx-background-color: #f8fafc; }
+
+/* filtro em formato de chip */
+.filter-chip {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 9; -fx-background-radius: 9;
+    -fx-padding: 8 12; -fx-spacing: 8;
+    -fx-alignment: CENTER_LEFT;
+}
+.filter-chip .label-key { -fx-text-fill: -text-faint; -fx-font-size: 12px; }
+
+/* ---- Painel "Meus Boards" (tabela) ---- */
+.panel { -fx-background-color: -panel; }
+.panel-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -text; }
+
+.boards-table { -fx-background-color: -panel; -fx-border-color: -border; }
+.boards-table .column-header-background { -fx-background-color: -panel; }
+.boards-table .column-header .label { -fx-text-fill: -text-faint; -fx-font-size: 11px; -fx-font-weight: bold; }
+.boards-table .table-row-cell { -fx-background-color: -panel; -fx-border-color: transparent transparent -border transparent; }
+.boards-table .table-row-cell:hover { -fx-background-color: #f6f8fb; }
+.boards-table .table-row-cell:selected {
+    -fx-background-color: #f2f6ff;
+    -fx-border-color: -accent transparent transparent transparent;
+    -fx-border-width: 0 0 0 3;
+}
+.boards-table .table-row-cell:selected .table-cell { -fx-text-fill: -text; }
