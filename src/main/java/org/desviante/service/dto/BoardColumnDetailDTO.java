@@ -1,5 +1,7 @@
 package org.desviante.service.dto;
 
+import org.desviante.model.enums.BoardColumnKindEnum;
+
 import java.util.List;
 
 /**
@@ -21,6 +23,7 @@ import java.util.List;
  * 
  * @param id identificador único da coluna do board
  * @param name nome de exibição da coluna
+ * @param kind tipo da coluna (INITIAL/PENDING/FINAL), usado para estilização
  * @param cards lista de cards que pertencem a esta coluna
  * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lgjor">GitHub</a>
  * @version 1.0
@@ -28,5 +31,5 @@ import java.util.List;
  * @see BoardDetailDTO
  * @see CardDetailDTO
  */
-public record BoardColumnDetailDTO(Long id, String name, List<CardDetailDTO> cards) {
+public record BoardColumnDetailDTO(Long id, String name, BoardColumnKindEnum kind, List<CardDetailDTO> cards) {
 }

@@ -104,3 +104,14 @@
     -fx-border-width: 0 0 0 3;
 }
 .boards-table .table-row-cell:selected .table-cell { -fx-text-fill: -text; }
+
+/* ---- Colunas do kanban ---- */
+.kanban-col {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: #eceff3;
+    -fx-border-radius: 14; -fx-background-radius: 14;
+}
+.column-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.col-accent-todo  { -fx-background-color: #9aa4b2; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+.col-accent-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+.col-accent-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }

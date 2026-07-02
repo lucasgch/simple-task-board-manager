@@ -340,7 +340,7 @@ public class TaskManagerFacade {
                                     card.getProgressTypeOrDefault() // Adicionar o tipo de progresso
                             ))
                             .collect(Collectors.toList());
-                    return new BoardColumnDetailDTO(column.getId(), column.getName(), cardDTOs);
+                    return new BoardColumnDetailDTO(column.getId(), column.getName(), column.getKind(), cardDTOs);
                 })
                 .collect(Collectors.toList());
 

@@ -7,13 +7,13 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <!-- ... (comentário do VBox principal) ... -->
 <VBox fx:id="rootVBox" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.desviante.view.component.ColumnViewController"
-      minWidth="200.0" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="column-container"
-      style="-fx-background-color: #f4f4f4; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-background-radius: 5;">
+      minWidth="200.0" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="column-container, kanban-col">
     <children>
         <!-- NOVO: HBox para o cabeçalho da coluna -->
         <HBox alignment="CENTER_LEFT" spacing="10">
@@ -21,10 +21,12 @@
                 <Insets bottom="5" left="10" right="10" top="10" />
             </padding>
             <children>
+                <!-- Indicador colorido do tipo da coluna, definido em runtime pelo controller -->
+                <Region fx:id="columnAccentDot" />
                 <!-- O título da coluna agora cresce para preencher o espaço -->
-                <Label fx:id="columnNameLabel" style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Nome da Coluna" HBox.hgrow="ALWAYS" />
+                <Label fx:id="columnNameLabel" styleClass="column-title" text="Nome da Coluna" HBox.hgrow="ALWAYS" />
                 <!-- O botão para adicionar um novo card -->
-                <Button fx:id="addCardButton" onAction="#handleCreateCard" text="+ Card" />
+                <Button fx:id="addCardButton" onAction="#handleCreateCard" text="+ Card" styleClass="btn-ghost" />
             </children>
         </HBox>
         <Separator prefWidth="200.0" />
