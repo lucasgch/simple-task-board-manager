@@ -25,9 +25,9 @@
                 <StackPane alignment="TOP_LEFT">
                     <children>
                         <!-- Label da categoria do card (modo visualização) -->
-                        <Label fx:id="cardTypeLabel" styleClass="card-type-label" />
+                        <Label fx:id="cardTypeLabel" styleClass="card-eyebrow" />
                         <!-- ComboBox para seleção do tipo (modo edição) -->
-                        <ComboBox fx:id="cardTypeComboBox" managed="false" visible="false" prefWidth="120.0" />
+                        <ComboBox fx:id="cardTypeComboBox" styleClass="inline-edit" managed="false" visible="false" prefWidth="120.0" />
                     </children>
                 </StackPane>
                 
@@ -45,7 +45,7 @@
         <StackPane fx:id="titleContainer" alignment="TOP_LEFT">
             <children>
                 <Label fx:id="titleLabel" styleClass="card-title" wrapText="true" />
-                <TextField fx:id="titleField" managed="false" visible="false" />
+                <TextField fx:id="titleField" styleClass="inline-edit" managed="false" visible="false" />
             </children>
         </StackPane>
 
@@ -53,7 +53,7 @@
         <StackPane fx:id="descriptionContainer" alignment="TOP_LEFT">
             <children>
                 <Label fx:id="descriptionLabel" styleClass="card-description" wrapText="true" />
-                <TextArea fx:id="descriptionArea" managed="false" prefHeight="80.0" visible="false" wrapText="true" />
+                <TextArea fx:id="descriptionArea" styleClass="inline-edit" managed="false" prefHeight="80.0" visible="false" wrapText="true" />
             </children>
         </StackPane>
 
@@ -77,7 +77,7 @@
                 <HBox alignment="CENTER" spacing="5">
                     <children>
                         <Label fx:id="progressLabel" text="Progresso:" styleClass="progress-label" minWidth="50.0" prefWidth="50.0" />
-                        <Label fx:id="progressValueLabel" text="0%" styleClass="progress-value" />
+                        <Label fx:id="progressValueLabel" text="0%" styleClass="card-pct" />
                     </children>
                 </HBox>
                 

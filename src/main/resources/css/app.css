@@ -115,3 +115,40 @@
 .col-accent-todo  { -fx-background-color: #9aa4b2; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
 .col-accent-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
 .col-accent-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+
+/* ---- Card ---- */
+.card-pane {
+    -fx-background-color: -panel;
+    -fx-border-color: #e8ebf0;
+    -fx-border-radius: 12; -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.03), 2, 0, 0, 1);
+}
+.card-pane:hover {
+    -fx-border-color: #d6dbe4;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.07), 12, 0, 0, 4);
+}
+.card-eyebrow {
+    -fx-text-fill: -text-faint; -fx-font-size: 10.5px; -fx-font-weight: bold;
+}
+.card-title { -fx-font-size: 14.5px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.card-description { -fx-font-size: 12px; -fx-text-fill: -text-mut; }
+.card-pct {
+    -fx-font-family: "IBM Plex Mono"; -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -text-mut;
+}
+
+/* Chip de status — mesmas classes já alternadas por ProgressContext.java,
+   só reskin (não renomeadas para não exigir mudança de Java). */
+.status-value { -fx-background-radius: 7; -fx-border-width: 0; -fx-padding: 3 9; -fx-font-size: 11.5px; -fx-font-weight: bold; }
+.status-value.status-not-started { -fx-background-color: -st-todo-bg;  -fx-text-fill: -st-todo-fg; }
+.status-value.status-in-progress { -fx-background-color: -st-doing-bg; -fx-text-fill: -st-doing-fg; }
+.status-value.status-completed  { -fx-background-color: -st-done-bg;  -fx-text-fill: -st-done-fg; }
+.status-value.status-unknown    { -fx-background-color: -st-todo-bg;  -fx-text-fill: -st-todo-fg; }
+
+/* Edição inline (Label vira TextField/TextArea/ComboBox no duplo clique) */
+.inline-edit {
+    -fx-background-color: -panel;
+    -fx-border-color: -accent;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-padding: 4 8;
+}
