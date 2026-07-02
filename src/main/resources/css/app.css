@@ -29,6 +29,13 @@
     -st-doing-bg: #fbf0da;  -st-doing-fg: #9a6a12;  -st-doing-fill: #e6ab3d;
     -st-done-bg:  #e2f2e9;  -st-done-fg:  #1f7a4d;  -st-done-fill:  #37a56d;
 
+    /* ações destrutivas / urgência — evita cair de volta no vermelho/laranja
+       saturados do Bootstrap legado (style.css) */
+    -danger:     #d64545;
+    -danger-bg:  #fbeaea;
+    -danger-fg:  #b93a3a;
+    -urgency-hi: #d9772e;
+
     -fx-font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
     -fx-background-color: -app-bg;
     -fx-font-size: 13px;
@@ -161,3 +168,298 @@
 .bar-fill-todo  { -fx-background-color: -st-todo-fill;  -fx-background-radius: 5; }
 .bar-fill-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 5; }
 .bar-fill-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 5; }
+
+/* =========================================================================
+   Interior do card (edição, checklist, campos percentuais, agendamento) e
+   diálogos (Tipos de Card / Grupos de Board) — ainda no visual do Bootstrap
+   legado em style.css (#007BFF/#28A745/#DC3545/...). Reskin com os mesmos
+   tokens acima, sem renomear classes (lógica Java intocada).
+   ========================================================================= */
+
+/* ---- Botões de ação do card (Salvar / Excluir) — par mais usado da tela ---- */
+.save-button {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+}
+.save-button:hover   { -fx-background-color: derive(-accent, 8%); }
+.save-button:pressed { -fx-background-color: derive(-accent, -10%); }
+
+.delete-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -danger-fg;
+    -fx-border-color: -danger;
+    -fx-border-width: 1;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.delete-button:hover   { -fx-background-color: -danger-bg; }
+.delete-button:pressed { -fx-background-color: derive(-danger-bg, -10%); }
+
+/* Botões do rodapé do card (integrações externas) */
+.calendar-button, .task-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-effect: none;
+}
+.calendar-button:hover, .task-button:hover {
+    -fx-border-color: #c3cad4; -fx-background-color: #f8fafc; -fx-text-fill: -text;
+}
+.calendar-button:pressed, .task-button:pressed { -fx-background-color: #eef1f5; }
+
+/* ---- Botões de mover card (↑ / ↓) ---- */
+.move-button {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-text-fill: -text-mut;
+    -fx-background-radius: 6; -fx-border-radius: 6;
+}
+.move-button:hover   { -fx-background-color: #f1f3f7; -fx-border-color: #c3cad4; -fx-text-fill: -text; -fx-effect: none; }
+.move-button:pressed { -fx-background-color: #e6e9ef; }
+.move-button:disabled {
+    -fx-background-color: -panel; -fx-border-color: -border; -fx-text-fill: -text-faint;
+}
+
+/* ---- Botões "+ Percentual" / "+ Checklist" ---- */
+.add-field-button {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-text-fill: -text-mut;
+}
+.add-field-button:hover   { -fx-background-color: #f1f3f7; -fx-border-color: #c3cad4; -fx-text-fill: -text; }
+.add-field-button:pressed { -fx-background-color: #e6e9ef; }
+
+/* ---- Seções internas do card (progresso / agendamento) ---- */
+.progress-section, .scheduling-section {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.progress-section-title { -fx-text-fill: -text; }
+.progress-label, .status-label { -fx-text-fill: -text-mut; }
+
+.clear-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+}
+.clear-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.clear-button:pressed { -fx-background-color: #e6e9ef; }
+
+.urgency-level-0 { -fx-text-fill: -text-faint; }
+.urgency-level-1 { -fx-text-fill: -accent; }
+.urgency-level-2 { -fx-text-fill: -st-doing-fg; }
+.urgency-level-3 { -fx-text-fill: -urgency-hi; }
+.urgency-level-4, .urgency-error { -fx-text-fill: -danger; }
+
+/* ---- Checklist ---- */
+.checklist-container {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: -border;
+    -fx-border-radius: 10; -fx-background-radius: 10;
+}
+.checklist-header, .add-item-container, .checklist-actions { -fx-border-color: -border; }
+.checklist-title { -fx-text-fill: -text; }
+.checklist-progress { -fx-background-color: -st-done-bg; -fx-text-fill: -st-done-fg; }
+
+.new-item-input { -fx-border-color: -border-strong; -fx-background-color: -panel; }
+.new-item-input:focused { -fx-border-color: -accent; -fx-border-width: 1.5; }
+
+.add-item-button, .clear-completed-button, .remove-all-button,
+.checklist-edit-button, .checklist-remove-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+}
+.add-item-button:hover, .clear-completed-button:hover, .remove-all-button:hover,
+.checklist-edit-button:hover, .checklist-remove-button:hover {
+    -fx-background-color: #f1f3f7; -fx-text-fill: -text;
+}
+.add-item-button:pressed, .clear-completed-button:pressed, .remove-all-button:pressed,
+.checklist-edit-button:pressed, .checklist-remove-button:pressed {
+    -fx-background-color: #e6e9ef;
+}
+
+.checklist-item-box {
+    -fx-background-color: -panel;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.checklist-item-box:hover { -fx-border-color: -accent; }
+.checklist-item-label { -fx-text-fill: -text; }
+.checklist-item-label.completed { -fx-text-fill: -text-faint; }
+
+/* ---- Campos de progresso percentual (field-card) ---- */
+.field-card {
+    -fx-background-color: -panel;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.field-card:hover { -fx-border-color: -border-strong; }
+.field-card-title { -fx-text-fill: -text; }
+.field-card-unit  { -fx-text-fill: -text-faint; }
+.field-card-progress { -fx-font-family: "IBM Plex Mono"; -fx-text-fill: -st-done-fg; }
+
+/* =========================================================================
+   Diálogos "Tipos de Card" / "Grupos de Board" (card-type-management.fxml,
+   board-group-management.fxml) — carregam style.css + este arquivo
+   diretamente via atributo stylesheets="@...", fora da Scene principal.
+   ========================================================================= */
+.title-label       { -fx-text-fill: -text; }
+.description-label { -fx-text-fill: -text-mut; }
+.section-label      { -fx-text-fill: -text; }
+
+.primary-button {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.primary-button:hover   { -fx-background-color: derive(-accent, 8%); }
+.primary-button:pressed { -fx-background-color: derive(-accent, -10%); }
+
+.secondary-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.secondary-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.secondary-button:pressed { -fx-background-color: #e6e9ef; }
+
+.danger-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -danger-fg;
+    -fx-border-color: -danger;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.danger-button:hover   { -fx-background-color: -danger-bg; }
+.danger-button:pressed { -fx-background-color: derive(-danger-bg, -10%); }
+
+.primary-button:disabled, .secondary-button:disabled, .danger-button:disabled {
+    -fx-opacity: 0.5;
+}
+
+/* ---- ComboBox — base compartilhada por toda a aplicação ----
+   Sem isto, todo ComboBox cai no botão de seta cinza padrão do Modena,
+   destoando do resto do visual flat/bordas finas do redesign. */
+.combo-box {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-padding: 1;
+}
+.combo-box:hover   { -fx-border-color: #c3cad4; }
+.combo-box:focused { -fx-border-color: -accent; }
+.combo-box .list-cell { -fx-text-fill: -text; -fx-background-color: transparent; }
+.combo-box .arrow-button { -fx-background-color: transparent; -fx-background-radius: 0 8 8 0; }
+.combo-box .arrow { -fx-background-color: -text-mut; }
+.combo-box-popup .list-view { -fx-background-color: -panel; -fx-border-color: -border-strong; }
+.combo-box-popup .list-cell:hover { -fx-background-color: #f1f3f7; }
+.combo-box-popup .list-cell:selected { -fx-background-color: #f2f6ff; -fx-text-fill: -text; }
+
+/* =========================================================================
+   Tela "Sobre" (about.fxml) — carregada com about.css + este arquivo
+   (BoardViewController.handleAbout). Reskin sem renomear classes.
+   ========================================================================= */
+.about-pane { -fx-background-color: -panel; }
+.app-title    { -fx-text-fill: -text; }
+.app-version  { -fx-text-fill: -text-mut; }
+.app-tagline  { -fx-text-fill: -text-mut; }
+.description-text {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-text-fill: -text;
+}
+.info-label { -fx-text-fill: -text-mut; }
+.info-value { -fx-text-fill: -text; }
+.features-list Label { -fx-text-fill: -text-mut; }
+.hyperlink { -fx-text-fill: -accent; }
+.hyperlink:hover   { -fx-text-fill: derive(-accent, -10%); }
+.hyperlink:visited { -fx-text-fill: -accent; }
+.copyright-text { -fx-text-fill: -text-faint; }
+.footer-text     { -fx-text-fill: -text-faint; }
+.about-pane .separator *.line { -fx-border-color: -border; }
+.close-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.close-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.close-button:pressed { -fx-background-color: #e6e9ef; }
+
+/* =========================================================================
+   Tela "Preferências" (preferences.fxml) — carrega preferences.css +
+   este arquivo. save-button/secondary-button/combo-box já cobertos acima;
+   cancel-button reusa o visual neutro do secondary-button.
+   ========================================================================= */
+.preferences-container { -fx-background-color: -app-bg; }
+.preferences-title { -fx-text-fill: -text; }
+.preferences-section {
+    -fx-background-color: -panel;
+    -fx-border-color: -border;
+    -fx-border-radius: 10; -fx-background-radius: 10;
+    -fx-effect: none;
+}
+.info-section {
+    -fx-background-color: -st-todo-bg;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.info-title { -fx-text-fill: -text; }
+.info-text  { -fx-text-fill: -text-mut; }
+.warning-section {
+    -fx-background-color: -st-doing-bg;
+    -fx-border-color: derive(-st-doing-bg, -15%);
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.warning-title { -fx-text-fill: -st-doing-fg; }
+.warning-text  { -fx-text-fill: -st-doing-fg; }
+
+.cancel-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.cancel-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.cancel-button:pressed { -fx-background-color: #e6e9ef; }
+
+/* preferences.css força ".save-button .label"/".cancel-button .label" para
+   branco (herdado dos fundos sólidos antigos) — sem isto o texto do
+   Cancelar (fundo branco no redesign) fica branco sobre branco. */
+.cancel-button .label { -fx-text-fill: -text-mut; }
+.cancel-button:hover .label { -fx-text-fill: -text; }
+
+/* =========================================================================
+   Tela "Calendário" (calendar-view.fxml) — antes sem nenhum stylesheet
+   (nem calendar.css, que segue órfã: seus seletores internos do widget
+   CalendarFX — .calendar-event-card, .priority-*, etc. — nunca foram
+   ligados a nós reais e não foram validados). Aqui só a moldura que
+   controlamos (nav, status, legenda) reusa btn-primary/btn-outline/
+   btn-ghost já existentes; o widget CalendarFX mantém seu skin próprio.
+   ========================================================================= */
+.status-bar-label { -fx-text-fill: -text-mut; }
+.version-label     { -fx-text-fill: -text-faint; -fx-font-style: italic; }
+.legend-card  { -fx-text-fill: -accent; }
+.legend-task  { -fx-text-fill: -st-doing-fg; }
+.legend-event { -fx-text-fill: -st-done-fg; }

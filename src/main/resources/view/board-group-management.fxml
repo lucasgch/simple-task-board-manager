@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox fx:id="rootContainer" spacing="10" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.desviante.view.BoardGroupManagementController">
+<VBox fx:id="rootContainer" spacing="10" stylesheets="@../css/style.css, @../css/app.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.desviante.view.BoardGroupManagementController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -23,7 +23,7 @@
     <VBox spacing="5">
         <Label text="Grupos de Board:" styleClass="section-label" />
         
-        <TableView fx:id="groupsTable" VBox.vgrow="ALWAYS" prefHeight="300">
+        <TableView fx:id="groupsTable" VBox.vgrow="ALWAYS" prefHeight="300" styleClass="boards-table">
             <columns>
                 <TableColumn fx:id="iconColumn" text="Ícone" prefWidth="80" />
                 <TableColumn fx:id="nameColumn" text="Nome" prefWidth="200" />

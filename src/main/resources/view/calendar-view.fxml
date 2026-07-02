@@ -4,39 +4,31 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            stylesheets="@../css/style.css, @../css/app.css">
    <top>
-      <VBox spacing="10.0">
+      <VBox styleClass="topbar" spacing="10.0">
          <children>
             <!-- Barra de Navegação -->
             <HBox alignment="CENTER_LEFT" spacing="10.0">
                <children>
-                  <Button fx:id="previousMonthButton" mnemonicParsing="false" onAction="#previousMonth" text="&lt; Mês Anterior" />
-                  <Button fx:id="todayButton" mnemonicParsing="false" onAction="#goToToday" text="Hoje" />
-                  <Button fx:id="nextMonthButton" mnemonicParsing="false" onAction="#nextMonth" text="Mês Seguinte &gt;" />
+                  <Button fx:id="previousMonthButton" mnemonicParsing="false" onAction="#previousMonth" text="&lt; Mês Anterior" styleClass="btn-outline" />
+                  <Button fx:id="todayButton" mnemonicParsing="false" onAction="#goToToday" text="Hoje" styleClass="btn-primary" />
+                  <Button fx:id="nextMonthButton" mnemonicParsing="false" onAction="#nextMonth" text="Mês Seguinte &gt;" styleClass="btn-outline" />
                   <Region HBox.hgrow="ALWAYS" />
-                  <Button fx:id="refreshButton" mnemonicParsing="false" onAction="#refreshCalendar" text="Atualizar" />
+                  <Button fx:id="refreshButton" mnemonicParsing="false" onAction="#refreshCalendar" text="Atualizar" styleClass="btn-ghost" />
                </children>
-               <padding>
-                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-               </padding>
             </HBox>
-            
+
             <!-- Barra de Status -->
             <HBox alignment="CENTER_LEFT" spacing="10.0">
                <children>
-                  <Label fx:id="statusLabel" text="Carregando calendário..." />
+                  <Label fx:id="statusLabel" text="Carregando calendário..." styleClass="status-bar-label" />
                   <Region HBox.hgrow="ALWAYS" />
                   <Label text="Sistema de Calendário v1.0" styleClass="version-label" />
                </children>
-               <padding>
-                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-               </padding>
             </HBox>
          </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
       </VBox>
    </top>
    
