@@ -713,6 +713,8 @@
     -fx-font-size: 9px;
     -fx-font-weight: bold;
     -fx-text-fill: #6C757D;
+    -fx-padding: 0;
+    -fx-alignment: CENTER;
     -fx-min-width: 20px;
     -fx-min-height: 20px;
     -fx-pref-width: 20px;

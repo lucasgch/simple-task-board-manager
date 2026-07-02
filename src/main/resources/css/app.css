@@ -1,0 +1,163 @@
+/* =========================================================================
+   Tarefas — redesign stylesheet (portado de handoff/app.css)
+   Carregado junto com style.css, na Scene principal (MainApp.start()),
+   depois de style.css — para que classes com o mesmo nome nos dois arquivos
+   sejam resolvidas a favor deste arquivo.
+   ========================================================================= */
+
+/* ---- Fontes (IBM Plex) ----
+   .ttf empacotados em src/main/resources/fonts/ (licença SIL OFL 1.1, ver
+   fonts/OFL.txt). Se os arquivos não estiverem presentes por algum motivo,
+   a família abaixo cai no fallback "Segoe UI"/sans-serif automaticamente. */
+@font-face { font-family: 'IBM Plex Sans'; src: url('/fonts/IBMPlexSans-Regular.ttf'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: bold; src: url('/fonts/IBMPlexSans-Bold.ttf'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 500; src: url('/fonts/IBMPlexMono-Medium.ttf'); }
+
+/* ---- Paleta (looked-up colors: use como -fx-background-color: -accent; etc) ---- */
+.root {
+    -app-bg:        #f4f6f9;
+    -panel:         #ffffff;
+    -border:        #e6e9ef;
+    -border-strong: #dbe0e8;
+    -text:          #232a35;
+    -text-mut:      #6b7480;
+    -text-faint:    #9aa2ad;
+    -accent:        #3866e6;
+
+    /* status */
+    -st-todo-bg:  #eef0f3;  -st-todo-fg:  #5b6472;  -st-todo-fill:  #c4ccd6;
+    -st-doing-bg: #fbf0da;  -st-doing-fg: #9a6a12;  -st-doing-fill: #e6ab3d;
+    -st-done-bg:  #e2f2e9;  -st-done-fg:  #1f7a4d;  -st-done-fill:  #37a56d;
+
+    -fx-font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    -fx-background-color: -app-bg;
+    -fx-font-size: 13px;
+}
+
+/* ---- Barra do topo ---- */
+.topbar {
+    -fx-background-color: -panel;
+    -fx-border-color: transparent transparent -border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 12 18;
+    -fx-spacing: 14;
+}
+.brand-badge {
+    -fx-background-color: -accent;
+    -fx-background-radius: 8;
+    -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30;
+    -fx-alignment: CENTER;
+    -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
+}
+
+/* ---- Botões ---- */
+.btn-primary {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(30,60,140,0.18), 4, 0, 0, 1);
+}
+.btn-primary:hover { -fx-background-color: derive(-accent, 8%); }
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-mut;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+
+.btn-outline {
+    -fx-background-color: -panel;
+    -fx-text-fill: #3a424e;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 13;
+    -fx-cursor: hand;
+}
+.btn-outline:hover { -fx-border-color: #c3cad4; -fx-background-color: #f8fafc; }
+
+/* filtro em formato de chip */
+.filter-chip {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 9; -fx-background-radius: 9;
+    -fx-padding: 8 12; -fx-spacing: 8;
+    -fx-alignment: CENTER_LEFT;
+}
+.filter-chip .label-key { -fx-text-fill: -text-faint; -fx-font-size: 12px; }
+
+/* ---- Painel "Meus Boards" (tabela) ---- */
+.panel { -fx-background-color: -panel; }
+.panel-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -text; }
+
+.boards-table { -fx-background-color: -panel; -fx-border-color: -border; }
+.boards-table .column-header-background { -fx-background-color: -panel; }
+.boards-table .column-header .label { -fx-text-fill: -text-faint; -fx-font-size: 11px; -fx-font-weight: bold; }
+.boards-table .table-row-cell { -fx-background-color: -panel; -fx-border-color: transparent transparent -border transparent; }
+.boards-table .table-row-cell:hover { -fx-background-color: #f6f8fb; }
+.boards-table .table-row-cell:selected {
+    -fx-background-color: #f2f6ff;
+    -fx-border-color: -accent transparent transparent transparent;
+    -fx-border-width: 0 0 0 3;
+}
+.boards-table .table-row-cell:selected .table-cell { -fx-text-fill: -text; }
+
+/* ---- Colunas do kanban ---- */
+.kanban-col {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: #eceff3;
+    -fx-border-radius: 14; -fx-background-radius: 14;
+}
+.column-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.col-accent-todo  { -fx-background-color: #9aa4b2; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+.col-accent-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+.col-accent-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; -fx-max-width: 9; -fx-max-height: 9; }
+
+/* ---- Card ---- */
+.card-pane {
+    -fx-background-color: -panel;
+    -fx-border-color: #e8ebf0;
+    -fx-border-radius: 12; -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.03), 2, 0, 0, 1);
+}
+.card-pane:hover {
+    -fx-border-color: #d6dbe4;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.07), 12, 0, 0, 4);
+}
+.card-eyebrow {
+    -fx-text-fill: -text-faint; -fx-font-size: 10.5px; -fx-font-weight: bold;
+}
+.card-title { -fx-font-size: 14.5px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.card-description { -fx-font-size: 12px; -fx-text-fill: -text-mut; }
+.card-pct {
+    -fx-font-family: "IBM Plex Mono"; -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -text-mut;
+}
+
+/* Chip de status — mesmas classes já alternadas por ProgressContext.java,
+   só reskin (não renomeadas para não exigir mudança de Java). */
+.status-value { -fx-background-radius: 7; -fx-border-width: 0; -fx-padding: 3 9; -fx-font-size: 11.5px; -fx-font-weight: bold; }
+.status-value.status-not-started { -fx-background-color: -st-todo-bg;  -fx-text-fill: -st-todo-fg; }
+.status-value.status-in-progress { -fx-background-color: -st-doing-bg; -fx-text-fill: -st-doing-fg; }
+.status-value.status-completed  { -fx-background-color: -st-done-bg;  -fx-text-fill: -st-done-fg; }
+.status-value.status-unknown    { -fx-background-color: -st-todo-bg;  -fx-text-fill: -st-todo-fg; }
+
+/* Edição inline (Label vira TextField/TextArea/ComboBox no duplo clique) */
+.inline-edit {
+    -fx-background-color: -panel;
+    -fx-border-color: -accent;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-padding: 4 8;
+}
+
+/* Barra de progresso do card (trilho + preenchimento, largura via binding) */
+.bar-track { -fx-background-color: #eef1f5; -fx-background-radius: 5; -fx-min-height: 6; -fx-max-height: 6; }
+.bar-fill-todo  { -fx-background-color: -st-todo-fill;  -fx-background-radius: 5; }
+.bar-fill-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 5; }
+.bar-fill-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 5; }

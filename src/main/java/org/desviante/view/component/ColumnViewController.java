@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.desviante.service.TaskManagerFacade;
 import org.desviante.service.dto.BoardColumnDetailDTO;
@@ -16,6 +17,7 @@ import org.desviante.service.dto.CardDetailDTO;
 import org.desviante.service.dto.CardTypeOptionDTO;
 import org.desviante.service.dto.CreateCardRequestDTO;
 import org.desviante.service.dto.UpdateCardDetailsDTO;
+import org.desviante.model.enums.BoardColumnKindEnum;
 import org.desviante.model.enums.ProgressType;
 
 import java.util.List;
@@ -41,6 +43,8 @@ public class ColumnViewController {
     private VBox rootVBox;
     @FXML
     private Label columnNameLabel;
+    @FXML
+    private Region columnAccentDot;
     @FXML
     private VBox cardsContainer;
 
@@ -93,6 +97,22 @@ public class ColumnViewController {
         this.onDataChange = onDataChange;
         this.onCardUpdate = onCardUpdate;
         this.columnNameLabel.setText(columnData.name());
+        this.columnAccentDot.getStyleClass().add(accentClassForKind(columnData.kind()));
+    }
+
+    /**
+     * Mapeia o tipo da coluna para a classe CSS do indicador colorido do
+     * cabeçalho (bolinha de accent).
+     */
+    private String accentClassForKind(BoardColumnKindEnum kind) {
+        if (kind == null) {
+            return "col-accent-todo";
+        }
+        return switch (kind) {
+            case INITIAL -> "col-accent-todo";
+            case PENDING -> "col-accent-doing";
+            case FINAL -> "col-accent-done";
+        };
     }
 
     /**

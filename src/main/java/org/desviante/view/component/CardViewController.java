@@ -10,6 +10,8 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.desviante.model.ChecklistField;
 import org.desviante.model.Field;
@@ -97,7 +99,9 @@ public class CardViewController {
     // Campo de progresso geral
     @FXML private Label progressLabel;
     @FXML private Label progressValueLabel;
-    
+    @FXML private StackPane progressBarTrack;
+    @FXML private Region progressBarFill;
+
     // Campo de status do card
     @FXML private Label statusValueLabel;
     
@@ -167,7 +171,8 @@ public class CardViewController {
         setupChecklistComponent();
         setupFieldComponent();
         setupDatePickers();
-        
+        setupProgressBar();
+
         // ProgressContext é inicializado em setData() quando facade está disponível
 
         // Garantir que os controles de movimentação estejam configurados corretamente
@@ -190,8 +195,20 @@ public class CardViewController {
         return new ProgressUIConfig(
             progressContainer, progressSection,
             progressLabel, progressValueLabel,
-            statusValueLabel, progressTypeContainer
+            statusValueLabel, progressTypeContainer,
+            progressBarTrack, progressBarFill
         );
+    }
+
+    /**
+     * Configura o binding estrutural da barra de progresso visual (trilho +
+     * preenchimento). O preenchimento precisa de maxWidth travado no
+     * prefWidth, senão o StackPane o esticaria para preencher toda a
+     * largura do trilho, ignorando a fração de progresso.
+     */
+    private void setupProgressBar() {
+        progressBarFill.setMaxWidth(Region.USE_PREF_SIZE);
+        progressBarFill.prefHeightProperty().bind(progressBarTrack.heightProperty());
     }
 
     /**

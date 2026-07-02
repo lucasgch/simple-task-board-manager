@@ -96,8 +96,13 @@ public class MainApp extends Application {
         fxmlLoader.setControllerFactory(springContext::getBean);
 
         Parent root = fxmlLoader.load();
+        Scene scene = new Scene(root, 1200, 800);
+        scene.getStylesheets().addAll(
+                getClass().getResource("/css/style.css").toExternalForm(),
+                getClass().getResource("/css/app.css").toExternalForm()
+        );
         primaryStage.setTitle("Simple Task Board Manager");
-        primaryStage.setScene(new Scene(root, 1200, 800));
+        primaryStage.setScene(scene);
         
         // Iniciar a aplicação maximizada
         primaryStage.setMaximized(true);
