@@ -1,0 +1,169 @@
+/* =========================================================================
+   Tarefas — stylesheet JavaFX (traduzido do redesign HTML)
+   Uso: scene.getStylesheets().add(getClass().getResource("/app.css").toExternalForm());
+   Fonte: carregue IBM Plex antes de mostrar a cena (ver nota no fim do arquivo).
+   ========================================================================= */
+
+/* ---- Paleta (looked-up colors: use como -fx-background-color: -accent; etc) ---- */
+.root {
+    -app-bg:        #f4f6f9;
+    -panel:         #ffffff;
+    -border:        #e6e9ef;
+    -border-strong: #dbe0e8;
+    -text:          #232a35;
+    -text-mut:      #6b7480;
+    -text-faint:    #9aa2ad;
+    -accent:        #3866e6;
+
+    /* status */
+    -st-todo-bg:  #eef0f3;  -st-todo-fg:  #5b6472;  -st-todo-fill:  #c4ccd6;
+    -st-doing-bg: #fbf0da;  -st-doing-fg: #9a6a12;  -st-doing-fill: #e6ab3d;
+    -st-done-bg:  #e2f2e9;  -st-done-fg:  #1f7a4d;  -st-done-fill:  #37a56d;
+
+    -fx-font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    -fx-background-color: -app-bg;
+    -fx-font-size: 13px;
+}
+
+/* ---- Barra do topo ---- */
+.topbar {
+    -fx-background-color: -panel;
+    -fx-border-color: transparent transparent -border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 12 18;
+    -fx-spacing: 14;
+    -fx-alignment: CENTER_LEFT;
+}
+.brand-badge {
+    -fx-background-color: -accent;
+    -fx-background-radius: 8;
+    -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30;
+    -fx-alignment: CENTER;
+    -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
+}
+
+/* ---- Botões ---- */
+.btn-primary {
+    -fx-background-color: -accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(30,60,140,0.18), 4, 0, 0, 1);
+}
+.btn-primary:hover { -fx-background-color: derive(-accent, 8%); }
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-mut;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+
+.btn-outline {
+    -fx-background-color: -panel;
+    -fx-text-fill: #3a424e;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 13;
+    -fx-cursor: hand;
+}
+.btn-outline:hover { -fx-border-color: #c3cad4; -fx-background-color: #f8fafc; }
+
+/* filtro em formato de chip */
+.filter-chip {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 9; -fx-background-radius: 9;
+    -fx-padding: 8 12; -fx-spacing: 8; -fx-cursor: hand;
+    -fx-alignment: CENTER_LEFT;
+}
+.filter-chip:hover { -fx-border-color: #c3cad4; }
+.filter-chip .label-key { -fx-text-fill: -text-faint; -fx-font-size: 12px; }
+
+/* ---- Painel Meus Boards (tabela) ---- */
+.panel { -fx-background-color: -panel; }
+.panel-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.count-pill {
+    -fx-background-color: #eef1f5; -fx-text-fill: -text-mut;
+    -fx-background-radius: 6; -fx-padding: 2 7;
+    -fx-font-family: "IBM Plex Mono"; -fx-font-size: 11.5px; -fx-font-weight: bold;
+}
+.table-head-label {
+    -fx-text-fill: -text-faint; -fx-font-size: 11px; -fx-font-weight: bold;
+}
+.board-row { -fx-background-radius: 9; -fx-padding: 9 14; -fx-cursor: hand; }
+.board-row:hover { -fx-background-color: #f6f8fb; }
+.board-row.selected {
+    -fx-background-color: #f2f6ff;
+    -fx-border-color: -accent transparent transparent transparent;   /* faixa azul à esquerda */
+    -fx-border-width: 0 0 0 3;
+}
+
+/* ---- Chips de status (aplique a classe conforme o estado) ---- */
+.chip { -fx-background-radius: 7; -fx-padding: 3 9; -fx-font-size: 11.5px; -fx-font-weight: bold; }
+.chip-todo  { -fx-background-color: -st-todo-bg;  -fx-text-fill: -st-todo-fg; }
+.chip-doing { -fx-background-color: -st-doing-bg; -fx-text-fill: -st-doing-fg; }
+.chip-done  { -fx-background-color: -st-done-bg;  -fx-text-fill: -st-done-fg; }
+
+/* ---- Colunas do kanban ---- */
+.kanban-col {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: #eceff3;
+    -fx-border-radius: 14; -fx-background-radius: 14;
+}
+.col-accent-todo  { -fx-background-color: #9aa4b2; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; }
+.col-accent-doing { -fx-background-color: #e6ab3d; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; }
+.col-accent-done  { -fx-background-color: #37a56d; -fx-background-radius: 3; -fx-min-width: 9; -fx-min-height: 9; }
+
+/* ---- Card compacto ---- */
+.card {
+    -fx-background-color: -panel;
+    -fx-border-color: #e8ebf0;
+    -fx-border-radius: 12; -fx-background-radius: 12;
+    -fx-padding: 12 13; -fx-spacing: 9;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.03), 2, 0, 0, 1);
+}
+.card:hover {
+    -fx-border-color: #d6dbe4;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,50,0.07), 12, 0, 0, 4);
+}
+.card-eyebrow {
+    -fx-text-fill: -text-faint; -fx-font-size: 10.5px; -fx-font-weight: bold;
+}
+.card-title { -fx-font-size: 14.5px; -fx-font-weight: bold; -fx-text-fill: -text; }
+.card-pct {
+    -fx-font-family: "IBM Plex Mono"; -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -text-mut;
+}
+.summary-pill {
+    -fx-background-color: #f2f4f7; -fx-text-fill: -text-mut;
+    -fx-background-radius: 7; -fx-padding: 3 9;
+    -fx-font-family: "IBM Plex Mono"; -fx-font-size: 11.5px; -fx-font-weight: bold;
+}
+
+/* barra de progresso simples (Region trilho + Region preenchimento; largura via binding) */
+.bar-track { -fx-background-color: #eef1f5; -fx-background-radius: 5; -fx-min-height: 6; -fx-max-height: 6; }
+.bar-fill-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 5; }
+.bar-fill-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 5; }
+.bar-fill-todo  { -fx-background-color: -st-todo-fill;  -fx-background-radius: 5; }
+
+/* ---- Edição inline (Label vira TextField no duplo clique) ---- */
+.inline-edit {
+    -fx-background-color: -panel;
+    -fx-border-color: -accent;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-padding: 4 8;
+}
+
+/*
+  Carregar a fonte antes de exibir a cena (senão cai no fallback Segoe UI):
+    Font.loadFont(getClass().getResourceAsStream("/fonts/IBMPlexSans-Regular.ttf"), 13);
+    Font.loadFont(getClass().getResourceAsStream("/fonts/IBMPlexSans-Bold.ttf"), 13);
+    Font.loadFont(getClass().getResourceAsStream("/fonts/IBMPlexMono-Medium.ttf"), 13);
+  (baixe os .ttf em fonts.google.com/specimen/IBM+Plex+Sans e coloque em src/main/resources/fonts)
+*/

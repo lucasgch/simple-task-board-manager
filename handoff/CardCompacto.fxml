@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CardCompacto.fxml — estrutura de um card. Carregue um por tarefa dentro do VBox da coluna.
+     Equivale ao <div class="card"> do protótipo. -->
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox styleClass="card" xmlns:fx="http://javafx.com/fxml">
+
+    <!-- linha 1: eyebrow + botão expandir -->
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Label fx:id="eyebrow" text="AULAS" styleClass="card-eyebrow"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnExpand" text="⌄" styleClass="btn-ghost" onAction="#toggleDetail"/>
+    </HBox>
+
+    <!-- título (duplo clique = edição inline; ver Controller) -->
+    <Label fx:id="title" text="Matemática 2" styleClass="card-title" wrapText="true"/>
+
+    <!-- progresso: trilho + preenchimento (largura ligada ao progresso no Controller) -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <StackPane fx:id="barTrack" styleClass="bar-track" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+            <Region fx:id="barFill" styleClass="bar-fill-doing"/>
+        </StackPane>
+        <Label fx:id="pct" text="41,9%" styleClass="card-pct" minWidth="44" alignment="CENTER_RIGHT"/>
+    </HBox>
+
+    <!-- chips -->
+    <HBox alignment="CENTER_LEFT" spacing="7">
+        <Label fx:id="statusChip" text="Em andamento" styleClass="chip, chip-doing"/>
+        <Label fx:id="summary" text="2 métricas" styleClass="summary-pill"/>
+    </HBox>
+
+    <!-- detalhe (checklist/percentual): visível só quando expandido -->
+    <VBox fx:id="detail" spacing="7" managed="false" visible="false"/>
+</VBox>

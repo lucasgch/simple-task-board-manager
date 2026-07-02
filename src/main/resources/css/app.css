@@ -1,0 +1,32 @@
+/* =========================================================================
+   Tarefas — redesign stylesheet (portado de handoff/app.css)
+   Carregado junto com style.css, na Scene principal (MainApp.start()),
+   depois de style.css — para que classes com o mesmo nome nos dois arquivos
+   sejam resolvidas a favor deste arquivo.
+   ========================================================================= */
+
+/* ---- Fontes (IBM Plex) ----
+   Blocos @font-face adicionados aqui quando os .ttf forem empacotados em
+   src/main/resources/fonts/ (ver commit de fontes). Até lá, a família abaixo
+   cai no fallback "Segoe UI"/sans-serif automaticamente. */
+
+/* ---- Paleta (looked-up colors: use como -fx-background-color: -accent; etc) ---- */
+.root {
+    -app-bg:        #f4f6f9;
+    -panel:         #ffffff;
+    -border:        #e6e9ef;
+    -border-strong: #dbe0e8;
+    -text:          #232a35;
+    -text-mut:      #6b7480;
+    -text-faint:    #9aa2ad;
+    -accent:        #3866e6;
+
+    /* status */
+    -st-todo-bg:  #eef0f3;  -st-todo-fg:  #5b6472;  -st-todo-fill:  #c4ccd6;
+    -st-doing-bg: #fbf0da;  -st-doing-fg: #9a6a12;  -st-doing-fill: #e6ab3d;
+    -st-done-bg:  #e2f2e9;  -st-done-fg:  #1f7a4d;  -st-done-fill:  #37a56d;
+
+    -fx-font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    -fx-background-color: -app-bg;
+    -fx-font-size: 13px;
+}
