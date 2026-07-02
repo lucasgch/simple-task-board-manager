@@ -1304,10 +1304,11 @@ public class BoardViewController {
                 closeButton.setOnAction(e -> stage.close());
             }
             
-            // Aplicar CSS diretamente
+            // Aplicar CSS diretamente (about.css + tokens do redesign em app.css)
             try {
                 String cssPath = getClass().getResource("/css/about.css").toExternalForm();
-                stage.getScene().getStylesheets().add(cssPath);
+                String appCssPath = getClass().getResource("/css/app.css").toExternalForm();
+                stage.getScene().getStylesheets().addAll(cssPath, appCssPath);
             } catch (Exception cssException) {
                 System.err.println("Erro ao carregar CSS: " + cssException.getMessage());
                 // Continuar sem CSS se houver erro

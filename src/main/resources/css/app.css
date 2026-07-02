@@ -353,3 +353,113 @@
 .primary-button:disabled, .secondary-button:disabled, .danger-button:disabled {
     -fx-opacity: 0.5;
 }
+
+/* ---- ComboBox — base compartilhada por toda a aplicação ----
+   Sem isto, todo ComboBox cai no botão de seta cinza padrão do Modena,
+   destoando do resto do visual flat/bordas finas do redesign. */
+.combo-box {
+    -fx-background-color: -panel;
+    -fx-border-color: -border-strong;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-padding: 1;
+}
+.combo-box:hover   { -fx-border-color: #c3cad4; }
+.combo-box:focused { -fx-border-color: -accent; }
+.combo-box .list-cell { -fx-text-fill: -text; -fx-background-color: transparent; }
+.combo-box .arrow-button { -fx-background-color: transparent; -fx-background-radius: 0 8 8 0; }
+.combo-box .arrow { -fx-background-color: -text-mut; }
+.combo-box-popup .list-view { -fx-background-color: -panel; -fx-border-color: -border-strong; }
+.combo-box-popup .list-cell:hover { -fx-background-color: #f1f3f7; }
+.combo-box-popup .list-cell:selected { -fx-background-color: #f2f6ff; -fx-text-fill: -text; }
+
+/* =========================================================================
+   Tela "Sobre" (about.fxml) — carregada com about.css + este arquivo
+   (BoardViewController.handleAbout). Reskin sem renomear classes.
+   ========================================================================= */
+.about-pane { -fx-background-color: -panel; }
+.app-title    { -fx-text-fill: -text; }
+.app-version  { -fx-text-fill: -text-mut; }
+.app-tagline  { -fx-text-fill: -text-mut; }
+.description-text {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+    -fx-text-fill: -text;
+}
+.info-label { -fx-text-fill: -text-mut; }
+.info-value { -fx-text-fill: -text; }
+.features-list Label { -fx-text-fill: -text-mut; }
+.hyperlink { -fx-text-fill: -accent; }
+.hyperlink:hover   { -fx-text-fill: derive(-accent, -10%); }
+.hyperlink:visited { -fx-text-fill: -accent; }
+.copyright-text { -fx-text-fill: -text-faint; }
+.footer-text     { -fx-text-fill: -text-faint; }
+.about-pane .separator *.line { -fx-border-color: -border; }
+.close-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.close-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.close-button:pressed { -fx-background-color: #e6e9ef; }
+
+/* =========================================================================
+   Tela "Preferências" (preferences.fxml) — carrega preferences.css +
+   este arquivo. save-button/secondary-button/combo-box já cobertos acima;
+   cancel-button reusa o visual neutro do secondary-button.
+   ========================================================================= */
+.preferences-container { -fx-background-color: -app-bg; }
+.preferences-title { -fx-text-fill: -text; }
+.preferences-section {
+    -fx-background-color: -panel;
+    -fx-border-color: -border;
+    -fx-border-radius: 10; -fx-background-radius: 10;
+    -fx-effect: none;
+}
+.info-section {
+    -fx-background-color: -st-todo-bg;
+    -fx-border-color: -border;
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.info-title { -fx-text-fill: -text; }
+.info-text  { -fx-text-fill: -text-mut; }
+.warning-section {
+    -fx-background-color: -st-doing-bg;
+    -fx-border-color: derive(-st-doing-bg, -15%);
+    -fx-border-radius: 8; -fx-background-radius: 8;
+}
+.warning-title { -fx-text-fill: -st-doing-fg; }
+.warning-text  { -fx-text-fill: -st-doing-fg; }
+
+.cancel-button {
+    -fx-background-color: -panel;
+    -fx-text-fill: -text-mut;
+    -fx-border-color: -border-strong;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8; -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+.cancel-button:hover   { -fx-background-color: #f1f3f7; -fx-text-fill: -text; }
+.cancel-button:pressed { -fx-background-color: #e6e9ef; }
+
+/* preferences.css força ".save-button .label"/".cancel-button .label" para
+   branco (herdado dos fundos sólidos antigos) — sem isto o texto do
+   Cancelar (fundo branco no redesign) fica branco sobre branco. */
+.cancel-button .label { -fx-text-fill: -text-mut; }
+.cancel-button:hover .label { -fx-text-fill: -text; }
+
+/* =========================================================================
+   Tela "Calendário" (calendar-view.fxml) — antes sem nenhum stylesheet
+   (nem calendar.css, que segue órfã: seus seletores internos do widget
+   CalendarFX — .calendar-event-card, .priority-*, etc. — nunca foram
+   ligados a nós reais e não foram validados). Aqui só a moldura que
+   controlamos (nav, status, legenda) reusa btn-primary/btn-outline/
+   btn-ghost já existentes; o widget CalendarFX mantém seu skin próprio.
+   ========================================================================= */
+.status-bar-label { -fx-text-fill: -text-mut; }
+.version-label     { -fx-text-fill: -text-faint; -fx-font-style: italic; }
+.legend-card  { -fx-text-fill: -accent; }
+.legend-task  { -fx-text-fill: -st-doing-fg; }
+.legend-event { -fx-text-fill: -st-done-fg; }
