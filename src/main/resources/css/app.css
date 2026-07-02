@@ -6,9 +6,12 @@
    ========================================================================= */
 
 /* ---- Fontes (IBM Plex) ----
-   Blocos @font-face adicionados aqui quando os .ttf forem empacotados em
-   src/main/resources/fonts/ (ver commit de fontes). Até lá, a família abaixo
-   cai no fallback "Segoe UI"/sans-serif automaticamente. */
+   .ttf empacotados em src/main/resources/fonts/ (licença SIL OFL 1.1, ver
+   fonts/OFL.txt). Se os arquivos não estiverem presentes por algum motivo,
+   a família abaixo cai no fallback "Segoe UI"/sans-serif automaticamente. */
+@font-face { font-family: 'IBM Plex Sans'; src: url('/fonts/IBMPlexSans-Regular.ttf'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: bold; src: url('/fonts/IBMPlexSans-Bold.ttf'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 500; src: url('/fonts/IBMPlexMono-Medium.ttf'); }
 
 /* ---- Paleta (looked-up colors: use como -fx-background-color: -accent; etc) ---- */
 .root {
