@@ -10,6 +10,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.GridPane?>
@@ -77,6 +78,11 @@
                 <HBox alignment="CENTER" spacing="5">
                     <children>
                         <Label fx:id="progressLabel" text="Progresso:" styleClass="progress-label" minWidth="50.0" prefWidth="50.0" />
+                        <StackPane fx:id="progressBarTrack" styleClass="bar-track" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Region fx:id="progressBarFill" styleClass="bar-fill-todo" />
+                            </children>
+                        </StackPane>
                         <Label fx:id="progressValueLabel" text="0%" styleClass="card-pct" />
                     </children>
                 </HBox>

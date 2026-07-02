@@ -2,6 +2,8 @@ package org.desviante.service.progress;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -16,6 +18,8 @@ public class ProgressUIConfig {
     private final Label progressValueLabel;
     private final Label statusValueLabel;
     private final HBox progressTypeContainer;
+    private final StackPane progressBarTrack;
+    private final Region progressBarFill;
 
     /**
      * Construtor para configuração da interface de progresso.
@@ -26,6 +30,8 @@ public class ProgressUIConfig {
      * @param progressValueLabel label para valor do progresso
      * @param statusValueLabel label para status do progresso
      * @param progressTypeContainer container para tipo de progresso
+     * @param progressBarTrack trilho da barra de progresso visual
+     * @param progressBarFill preenchimento da barra de progresso visual
      */
     public ProgressUIConfig(
             VBox progressContainer,
@@ -33,7 +39,9 @@ public class ProgressUIConfig {
             Label progressLabel,
             Label progressValueLabel,
             Label statusValueLabel,
-            HBox progressTypeContainer) {
+            HBox progressTypeContainer,
+            StackPane progressBarTrack,
+            Region progressBarFill) {
 
         this.progressContainer = progressContainer;
         this.progressSection = progressSection;
@@ -41,6 +49,8 @@ public class ProgressUIConfig {
         this.progressValueLabel = progressValueLabel;
         this.statusValueLabel = statusValueLabel;
         this.progressTypeContainer = progressTypeContainer;
+        this.progressBarTrack = progressBarTrack;
+        this.progressBarFill = progressBarFill;
     }
     
     /**
@@ -84,4 +94,18 @@ public class ProgressUIConfig {
      * @return container para tipo de progresso
      */
     public HBox getProgressTypeContainer() { return progressTypeContainer; }
+
+    /**
+     * Obtém o trilho da barra de progresso visual.
+     *
+     * @return trilho da barra de progresso visual
+     */
+    public StackPane getProgressBarTrack() { return progressBarTrack; }
+
+    /**
+     * Obtém o preenchimento da barra de progresso visual.
+     *
+     * @return preenchimento da barra de progresso visual
+     */
+    public Region getProgressBarFill() { return progressBarFill; }
 }

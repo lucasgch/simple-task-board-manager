@@ -152,3 +152,9 @@
     -fx-border-radius: 6; -fx-background-radius: 6;
     -fx-padding: 4 8;
 }
+
+/* Barra de progresso do card (trilho + preenchimento, largura via binding) */
+.bar-track { -fx-background-color: #eef1f5; -fx-background-radius: 5; -fx-min-height: 6; -fx-max-height: 6; }
+.bar-fill-todo  { -fx-background-color: -st-todo-fill;  -fx-background-radius: 5; }
+.bar-fill-doing { -fx-background-color: -st-doing-fill; -fx-background-radius: 5; }
+.bar-fill-done  { -fx-background-color: -st-done-fill;  -fx-background-radius: 5; }

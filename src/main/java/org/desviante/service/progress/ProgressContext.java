@@ -1,5 +1,7 @@
 package org.desviante.service.progress;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import org.desviante.model.enums.ProgressType;
 import org.desviante.model.enums.BoardColumnKindEnum;
 import org.desviante.service.FieldService;
@@ -12,11 +14,12 @@ import java.util.Map;
  * Coordena a interface do usuário com as estratégias específicas.
  */
 public class ProgressContext {
-    
+
     private ProgressStrategy currentStrategy;
     private final Map<ProgressType, ProgressStrategy> strategies;
     private ProgressUIConfig uiConfig;
-    
+    private final DoubleProperty progressFraction = new SimpleDoubleProperty(0);
+
     /**
      * Construtor da classe ProgressContext.
      *
@@ -44,6 +47,11 @@ public class ProgressContext {
      */
     public void setUIConfig(ProgressUIConfig uiConfig) {
         this.uiConfig = uiConfig;
+        if (uiConfig.getProgressBarTrack() != null && uiConfig.getProgressBarFill() != null) {
+            uiConfig.getProgressBarFill().prefWidthProperty().bind(
+                uiConfig.getProgressBarTrack().widthProperty().multiply(progressFraction)
+            );
+        }
     }
     
     /**
@@ -162,6 +170,33 @@ public class ProgressContext {
             );
             uiConfig.getStatusValueLabel().getStyleClass().add(data.getStatusCssClass());
         }
+
+        // Atualizar a barra de progresso visual (trilho + preenchimento)
+        if (uiConfig.getProgressBarFill() != null) {
+            double fraction = data.getProgressPercentage() != null
+                ? Math.max(0, Math.min(1, data.getProgressPercentage() / 100.0))
+                : 0.0;
+            progressFraction.set(fraction);
+
+            uiConfig.getProgressBarFill().getStyleClass().removeAll(
+                "bar-fill-todo", "bar-fill-doing", "bar-fill-done"
+            );
+            uiConfig.getProgressBarFill().getStyleClass().add(barFillCssClass(data.getStatusCssClass()));
+        }
+    }
+
+    /**
+     * Mapeia a classe CSS do status (já calculada a partir da coluna) para a
+     * classe de preenchimento da barra de progresso visual correspondente.
+     */
+    private String barFillCssClass(String statusCssClass) {
+        if ("status-in-progress".equals(statusCssClass)) {
+            return "bar-fill-doing";
+        }
+        if ("status-completed".equals(statusCssClass)) {
+            return "bar-fill-done";
+        }
+        return "bar-fill-todo";
     }
     
     /**
