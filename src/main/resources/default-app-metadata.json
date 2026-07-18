@@ -16,6 +16,10 @@
   "autoBackupDatabase": true,
   "autoBackupIntervalHours": 24,
   "autoBackupDirectory": "${user.home}/myboards/backups",
+  "syncEnabled": false,
+  "syncFolderPath": null,
+  "syncDeviceId": null,
+  "syncMode": "MANUAL",
   "uiConfig": {
     "theme": "system",
     "language": "pt-BR",

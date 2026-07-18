@@ -2,6 +2,7 @@ package org.desviante.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -36,8 +37,17 @@ import java.util.logging.Logger;
 @EnableTransactionManagement
 public class DataConfig {
 
-    private static final String DB_FILE_PATH = System.getProperty("user.home") + "/myboards/board_h2_db";
     private static final Logger logger = Logger.getLogger(DataConfig.class.getName());
+
+    // Fonte única de verdade da conexão: application.properties (spring.datasource.*)
+    @Value("${spring.datasource.url}")
+    private String jdbcUrl;
+
+    @Value("${spring.datasource.username}")
+    private String dbUsername;
+
+    @Value("${spring.datasource.password}")
+    private String dbPassword;
 
     /**
      * Construtor padrão da configuração de dados.
@@ -62,9 +72,9 @@ public class DataConfig {
     @Bean(destroyMethod = "close")
     public DataSource dataSource() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:h2:file:" + DB_FILE_PATH + ";AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1");
-        config.setUsername("myboarduser");
-        config.setPassword("myboardpassword"); // Considere usar uma senha mais forte ou externa no futuro
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(dbUsername);
+        config.setPassword(dbPassword);
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -108,7 +118,7 @@ public class DataConfig {
         initializer.setDatabasePopulator(populator);
 
         // Verifica se o banco existe e se precisa de inicialização
-        File dbFile = new File(DB_FILE_PATH + ".mv.db");
+        File dbFile = new File(getDatabaseFilePath() + ".mv.db");
         boolean shouldInitialize = !dbFile.exists() || !isDatabaseValid(dataSource);
         
         logger.info("Banco de dados existe: " + dbFile.exists());
@@ -118,6 +128,20 @@ public class DataConfig {
         initializer.setEnabled(shouldInitialize);
 
         return initializer;
+    }
+
+    /**
+     * Extrai o caminho do arquivo físico do banco a partir da URL JDBC.
+     *
+     * <p>Exemplo: {@code jdbc:h2:file:/home/user/myboards/board_h2_db;AUTO_SERVER=TRUE}
+     * resulta em {@code /home/user/myboards/board_h2_db} (sem a extensão .mv.db).</p>
+     *
+     * @return caminho base do arquivo do banco, sem extensão
+     */
+    private String getDatabaseFilePath() {
+        String path = jdbcUrl.replaceFirst("^jdbc:h2:file:", "");
+        int paramsIndex = path.indexOf(';');
+        return paramsIndex >= 0 ? path.substring(0, paramsIndex) : path;
     }
 
     /**

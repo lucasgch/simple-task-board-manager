@@ -170,6 +170,10 @@ public class AppMetadataConfig {
                 .autoBackupDatabase(true)
                 .autoBackupIntervalHours(24)
                 .autoBackupDirectory(System.getProperty("user.home") + "/myboards/backups")
+                .syncEnabled(false) // Sincronização entre dispositivos desabilitada por padrão
+                .syncFolderPath(null) // Usuário escolhe a pasta de nuvem ao habilitar
+                .syncDeviceId(null) // UUID gerado na primeira ativação da sincronização
+                .syncMode(org.desviante.sync.SyncMode.MANUAL)
                 .uiConfig(AppMetadata.UIConfig.builder()
                         .theme("system")
                         .language("pt-BR")
@@ -253,7 +257,9 @@ public class AppMetadataConfig {
             }
             
             log.info("✅ Validação de metadados concluída com sucesso");
-            
+
+            migrateSyncFieldsIfMissing();
+
         } catch (IOException e) {
             log.error("❌ Erro ao ler arquivo de metadados: {}", e.getMessage());
             log.error("❌ Stack trace completo:", e);
@@ -287,6 +293,38 @@ public class AppMetadataConfig {
         }
     }
     
+    /**
+     * Migra arquivos de metadados criados antes da introdução dos campos de
+     * sincronização entre dispositivos.
+     *
+     * <p>JSONs antigos não possuem os campos de sync, que ficam {@code null}
+     * após a deserialização. Este método aplica os valores padrão e regrava o
+     * arquivo uma única vez; nas cargas seguintes nada muda e nada é salvo.</p>
+     */
+    private void migrateSyncFieldsIfMissing() {
+        boolean changed = false;
+
+        if (currentMetadata.getSyncEnabled() == null) {
+            currentMetadata.setSyncEnabled(false);
+            changed = true;
+        }
+        if (currentMetadata.getSyncMode() == null) {
+            currentMetadata.setSyncMode(org.desviante.sync.SyncMode.MANUAL);
+            changed = true;
+        }
+
+        if (changed) {
+            log.info("🔄 Migrando metadados: adicionando campos de sincronização com valores padrão");
+            try {
+                saveMetadata();
+            } catch (IOException e) {
+                // Não é fatal: os defaults já estão aplicados em memória;
+                // a migração será tentada novamente na próxima carga.
+                log.warn("Não foi possível persistir a migração dos campos de sync: {}", e.getMessage());
+            }
+        }
+    }
+
     /**
      * Cria e aplica metadados padrão quando não é possível carregar do arquivo.
      */
@@ -548,8 +586,46 @@ public class AppMetadataConfig {
     }
     
     /**
+     * Indica se a sincronização entre dispositivos está habilitada.
+     *
+     * @return true se a sincronização está habilitada
+     */
+    public boolean isSyncEnabled() {
+        return Boolean.TRUE.equals(currentMetadata.getSyncEnabled());
+    }
+
+    /**
+     * Obtém a pasta de nuvem configurada para sincronização.
+     *
+     * @return caminho da pasta de sincronização, se configurada
+     */
+    public Optional<String> getSyncFolderPath() {
+        return Optional.ofNullable(currentMetadata.getSyncFolderPath());
+    }
+
+    /**
+     * Obtém o identificador único deste dispositivo para sincronização.
+     *
+     * @return identificador do dispositivo, se já gerado
+     */
+    public Optional<String> getSyncDeviceId() {
+        return Optional.ofNullable(currentMetadata.getSyncDeviceId());
+    }
+
+    /**
+     * Obtém o modo de sincronização configurado.
+     *
+     * @return modo de sincronização (nunca null; padrão MANUAL)
+     */
+    public org.desviante.sync.SyncMode getSyncMode() {
+        return currentMetadata.getSyncMode() != null
+                ? currentMetadata.getSyncMode()
+                : org.desviante.sync.SyncMode.MANUAL;
+    }
+
+    /**
      * Salva os metadados atuais no arquivo.
-     * 
+     *
      * @throws IOException se houver erro ao salvar
      */
     public void saveMetadata() throws IOException {

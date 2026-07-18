@@ -5,24 +5,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Serviço para backup automático do banco de dados.
- * 
+ *
  * <p>Este serviço cria backups automáticos antes de executar migrações,
  * garantindo que os dados do usuário sejam preservados em caso de falha.</p>
- * 
+ *
+ * <p>O backup utiliza o comando nativo {@code SCRIPT TO} do H2, que gera um
+ * snapshot transacionalmente consistente de <strong>todo</strong> o banco
+ * (schema e dados de todas as tabelas), mesmo com o banco em uso. Isso
+ * substitui a antiga geração manual de INSERTs, que dependia de uma lista
+ * fixa de tabelas e colunas e ficava obsoleta a cada mudança de schema.</p>
+ *
+ * <p>Para restaurar um backup, execute contra um banco vazio:
+ * {@code RUNSCRIPT FROM 'arquivo.sql.gz' COMPRESSION GZIP}</p>
+ *
  * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lgjor">GitHub</a>
- * @version 1.0
+ * @version 2.0
  * @since 1.0
  */
 @Service
@@ -34,8 +40,8 @@ public class DatabaseBackupService {
     private static final String BACKUP_DIR = System.getProperty("user.home") + "/myboards/backups";
 
     /**
-     * Cria um backup automático do banco de dados.
-     * 
+     * Cria um backup completo do banco de dados via {@code SCRIPT TO}.
+     *
      * @param reason motivo do backup (ex: "before_migration", "manual")
      * @return caminho do arquivo de backup criado
      */
@@ -50,33 +56,12 @@ public class DatabaseBackupService {
 
             // Gerar nome do arquivo com timestamp
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String fileName = String.format("backup_%s_%s.sql", reason, timestamp);
+            String fileName = String.format("backup_%s_%s.sql.gz", reason, timestamp);
             String backupPath = BACKUP_DIR + "/" + fileName;
 
-            // Criar arquivo de backup
-            try (FileWriter writer = new FileWriter(backupPath)) {
-                writer.write("-- Backup automático criado em: " + LocalDateTime.now() + "\n");
-                writer.write("-- Motivo: " + reason + "\n\n");
-
-                // Backup da tabela boards
-                backupTable(writer, "boards", "id, name, creation_date, group_id");
-
-                // Backup da tabela board_columns
-                backupTable(writer, "board_columns", "id, name, order_index, kind, board_id");
-
-                // Backup da tabela cards
-                backupTable(writer, "cards", 
-                    "id, title, description, board_column_id, card_type_id, progress_type, " +
-                    "total_units, current_units, creation_date, last_update_date, completion_date, order_index");
-
-                // Backup da tabela card_types
-                backupTable(writer, "card_types", "id, name, unit_label, creation_date, last_update_date");
-
-                // Backup da tabela board_groups
-                backupTable(writer, "board_groups", "id, name, description, color, icon, creation_date");
-
-                writer.write("\n-- Backup concluído com sucesso\n");
-            }
+            // SCRIPT TO exige o caminho como literal SQL — escapar aspas simples
+            String escapedPath = backupPath.replace("'", "''");
+            jdbcTemplate.execute("SCRIPT TO '" + escapedPath + "' COMPRESSION GZIP");
 
             log.info("Backup criado com sucesso: {}", backupPath);
             return backupPath;
@@ -88,76 +73,11 @@ public class DatabaseBackupService {
     }
 
     /**
-     * Faz backup de uma tabela específica.
-     * 
-     * @param writer FileWriter para escrever o backup
-     * @param tableName nome da tabela
-     * @param columns colunas para backup (separadas por vírgula)
-     */
-    private void backupTable(FileWriter writer, String tableName, String columns) throws IOException {
-        try {
-            writer.write("-- Backup da tabela " + tableName + "\n");
-            
-            // Verificar se a tabela existe
-            String checkTableSql = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?";
-            Integer tableExists = jdbcTemplate.queryForObject(checkTableSql, Integer.class, tableName.toUpperCase());
-            
-            if (tableExists == null || tableExists == 0) {
-                writer.write("-- Tabela " + tableName + " não existe\n\n");
-                return;
-            }
-
-            // Obter dados da tabela
-            String selectSql = "SELECT " + columns + " FROM " + tableName;
-            List<Map<String, Object>> rows = jdbcTemplate.queryForList(selectSql);
-
-            if (rows.isEmpty()) {
-                writer.write("-- Tabela " + tableName + " está vazia\n\n");
-                return;
-            }
-
-            // Gerar INSERT statements
-            for (Map<String, Object> row : rows) {
-                StringBuilder insertSql = new StringBuilder("INSERT INTO " + tableName + " (");
-                StringBuilder values = new StringBuilder(" VALUES (");
-                
-                String[] columnArray = columns.split(", ");
-                for (int i = 0; i < columnArray.length; i++) {
-                    if (i > 0) {
-                        insertSql.append(", ");
-                        values.append(", ");
-                    }
-                    insertSql.append(columnArray[i]);
-                    
-                    Object value = row.get(columnArray[i].toUpperCase());
-                    if (value == null) {
-                        values.append("NULL");
-                    } else if (value instanceof String) {
-                        values.append("'").append(value.toString().replace("'", "''")).append("'");
-                    } else if (value instanceof java.sql.Timestamp) {
-                        values.append("'").append(value.toString()).append("'");
-                    } else {
-                        values.append(value.toString());
-                    }
-                }
-                
-                insertSql.append(")");
-                values.append(");");
-                
-                writer.write(insertSql.toString() + values.toString() + "\n");
-            }
-            
-            writer.write("\n");
-
-        } catch (Exception e) {
-            writer.write("-- Erro ao fazer backup da tabela " + tableName + ": " + e.getMessage() + "\n\n");
-            log.warn("Erro ao fazer backup da tabela {}: {}", tableName, e.getMessage());
-        }
-    }
-
-    /**
      * Lista backups disponíveis.
-     * 
+     *
+     * <p>Inclui backups no formato atual ({@code .sql.gz}) e no formato
+     * antigo ({@code .sql}), para manter visíveis backups pré-existentes.</p>
+     *
      * @return lista de arquivos de backup
      */
     public List<String> listBackups() {
@@ -166,13 +86,16 @@ public class DatabaseBackupService {
             if (!Files.exists(backupDir)) {
                 return List.of();
             }
-            
+
             return Files.list(backupDir)
-                .filter(path -> path.toString().endsWith(".sql"))
+                .filter(path -> {
+                    String name = path.toString();
+                    return name.endsWith(".sql") || name.endsWith(".sql.gz");
+                })
                 .map(path -> path.getFileName().toString())
                 .sorted()
                 .toList();
-                
+
         } catch (Exception e) {
             log.error("Erro ao listar backups: {}", e.getMessage());
             return List.of();
@@ -181,7 +104,7 @@ public class DatabaseBackupService {
 
     /**
      * Remove backups antigos, mantendo apenas os mais recentes.
-     * 
+     *
      * @param keepCount número de backups para manter
      */
     public void cleanupOldBackups(int keepCount) {
@@ -190,14 +113,14 @@ public class DatabaseBackupService {
             if (backups.size() <= keepCount) {
                 return;
             }
-            
+
             int toDelete = backups.size() - keepCount;
             for (int i = 0; i < toDelete; i++) {
                 String backupFile = BACKUP_DIR + "/" + backups.get(i);
                 Files.deleteIfExists(Paths.get(backupFile));
                 log.info("Backup antigo removido: {}", backupFile);
             }
-            
+
         } catch (Exception e) {
             log.error("Erro ao limpar backups antigos: {}", e.getMessage());
         }
@@ -205,16 +128,16 @@ public class DatabaseBackupService {
 
     /**
      * Cria backup antes de uma migração.
-     * 
+     *
      * @return caminho do arquivo de backup
      */
     public String createPreMigrationBackup() {
         log.info("Criando backup antes da migração...");
         String backupPath = createBackup("before_migration");
-        
+
         // Limpar backups antigos, mantendo apenas os 5 mais recentes
         cleanupOldBackups(5);
-        
+
         return backupPath;
     }
 }

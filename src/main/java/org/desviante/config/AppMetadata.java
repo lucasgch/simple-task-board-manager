@@ -1,5 +1,6 @@
 package org.desviante.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 import org.desviante.model.enums.ProgressType;
 
@@ -35,6 +36,9 @@ import org.desviante.model.enums.ProgressType;
 @AllArgsConstructor
 @Builder
 @lombok.Generated
+// Campos desconhecidos no JSON (ex.: gerados por uma versão mais nova do app)
+// não devem derrubar o carregamento e descartar toda a configuração do usuário.
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AppMetadata {
     
     /**
@@ -199,7 +203,44 @@ public class AppMetadata {
      * @param autoBackupDirectory novo caminho do diretório de backup
      */
     private String autoBackupDirectory;
-    
+
+    /**
+     * Habilita a sincronização de dados entre dispositivos via pasta de nuvem.
+     *
+     * @return true se a sincronização está habilitada
+     * @param syncEnabled novo estado da sincronização
+     */
+    @Builder.Default
+    private Boolean syncEnabled = false;
+
+    /**
+     * Pasta local sincronizada pelo provedor de nuvem (Dropbox, Google Drive, OneDrive)
+     * onde os snapshots do banco são publicados/lidos.
+     *
+     * @return caminho da pasta de sincronização
+     * @param syncFolderPath novo caminho da pasta de sincronização
+     */
+    private String syncFolderPath;
+
+    /**
+     * Identificador único deste dispositivo/instalação (UUID), gerado na
+     * primeira ativação da sincronização. Usado no manifest de sync para
+     * detectar a origem dos snapshots e resolver conflitos.
+     *
+     * @return identificador do dispositivo
+     * @param syncDeviceId novo identificador do dispositivo
+     */
+    private String syncDeviceId;
+
+    /**
+     * Modo de sincronização (manual ou automática ao abrir/fechar).
+     *
+     * @return modo de sincronização
+     * @param syncMode novo modo de sincronização
+     */
+    @Builder.Default
+    private org.desviante.sync.SyncMode syncMode = org.desviante.sync.SyncMode.MANUAL;
+
     /**
      * Configurações de interface do usuário.
      * 
@@ -633,6 +674,10 @@ public class AppMetadata {
         private Boolean autoBackupDatabase = true;
         private Integer autoBackupIntervalHours = 24;
         private String autoBackupDirectory;
+        private Boolean syncEnabled = false;
+        private String syncFolderPath;
+        private String syncDeviceId;
+        private org.desviante.sync.SyncMode syncMode = org.desviante.sync.SyncMode.MANUAL;
         private UIConfig uiConfig = UIConfig.builder().build();
         private PerformanceConfig performanceConfig = PerformanceConfig.builder().build();
         private SecurityConfig securityConfig = SecurityConfig.builder().build();
@@ -834,7 +879,51 @@ public class AppMetadata {
             this.autoBackupDirectory = autoBackupDirectory;
             return this;
         }
-        
+
+        /**
+         * Define se a sincronização entre dispositivos está habilitada.
+         *
+         * @param syncEnabled novo estado da sincronização
+         * @return builder para encadeamento
+         */
+        public AppMetadataBuilder syncEnabled(Boolean syncEnabled) {
+            this.syncEnabled = syncEnabled;
+            return this;
+        }
+
+        /**
+         * Define a pasta de nuvem usada para sincronização.
+         *
+         * @param syncFolderPath novo caminho da pasta de sincronização
+         * @return builder para encadeamento
+         */
+        public AppMetadataBuilder syncFolderPath(String syncFolderPath) {
+            this.syncFolderPath = syncFolderPath;
+            return this;
+        }
+
+        /**
+         * Define o identificador único deste dispositivo.
+         *
+         * @param syncDeviceId novo identificador do dispositivo
+         * @return builder para encadeamento
+         */
+        public AppMetadataBuilder syncDeviceId(String syncDeviceId) {
+            this.syncDeviceId = syncDeviceId;
+            return this;
+        }
+
+        /**
+         * Define o modo de sincronização.
+         *
+         * @param syncMode novo modo de sincronização
+         * @return builder para encadeamento
+         */
+        public AppMetadataBuilder syncMode(org.desviante.sync.SyncMode syncMode) {
+            this.syncMode = syncMode;
+            return this;
+        }
+
         /**
          * Define a configuração de interface do usuário.
          * 
@@ -874,12 +963,13 @@ public class AppMetadata {
          * @return nova instância de AppMetadata
          */
         public AppMetadata build() {
-            return new AppMetadata(metadataVersion, defaultCardTypeId, defaultProgressType, 
-                                 defaultBoardGroupId, defaultStatusFilter, installationDirectory, 
-                                 userDataDirectory, logDirectory, defaultLogLevel, maxLogFileSizeMB, 
-                                 maxLogFiles, updateCheckIntervalHours, autoCheckUpdates, 
-                                 showSystemNotifications, databaseTimeoutSeconds, autoBackupDatabase, 
-                                 autoBackupIntervalHours, autoBackupDirectory, uiConfig, 
+            return new AppMetadata(metadataVersion, defaultCardTypeId, defaultProgressType,
+                                 defaultBoardGroupId, defaultStatusFilter, installationDirectory,
+                                 userDataDirectory, logDirectory, defaultLogLevel, maxLogFileSizeMB,
+                                 maxLogFiles, updateCheckIntervalHours, autoCheckUpdates,
+                                 showSystemNotifications, databaseTimeoutSeconds, autoBackupDatabase,
+                                 autoBackupIntervalHours, autoBackupDirectory, syncEnabled,
+                                 syncFolderPath, syncDeviceId, syncMode, uiConfig,
                                  performanceConfig, securityConfig);
         }
     }
