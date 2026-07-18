@@ -13,60 +13,60 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [21]
-    
+        java-version: [25]
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.java-version }}
         distribution: 'temurin'
-    
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    
+
     - name: Build with Gradle
       run: ./gradlew build -x test
-    
+
     - name: Generate Linux Installers
       run: |
         ./gradlew jpackageLinux
         ./gradlew jpackageLinuxDeb
         ./gradlew jpackageLinuxRpm
-    
+
     - name: Upload Linux Installers
       uses: actions/upload-artifact@v4
       with:
         name: linux-installers
-        path: build/dist/*.AppImage,build/dist/*.deb,build/dist/*.rpm,build/dist/*.snap
+        path: |
+          build/dist/*.AppImage
+          build/dist/*.deb
+          build/dist/*.rpm
         retention-days: 30
 
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        java-version: [21]
-    
+        java-version: [25]
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK ${{ matrix.java-version }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.java-version }}
         distribution: 'temurin'
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
+
     - name: Build with Gradle
       run: ./gradlew build -x test
-    
+
     - name: Generate Windows Installer
       run: ./gradlew jpackage
-    
+
     - name: Upload Windows Installer
       uses: actions/upload-artifact@v4
       with:
@@ -74,50 +74,17 @@ jobs:
         path: build/dist/*.exe
         retention-days: 30
 
-  build-macos:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        java-version: [21]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up JDK ${{ matrix.java-version }}
-      uses: actions/setup-java@v4
-      with:
-        java-version: ${{ matrix.java-version }}
-        distribution: 'temurin'
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    - name: Build with Gradle
-      run: ./gradlew build -x test
-    
-    - name: Generate macOS Installer
-      run: |
-        ./gradlew jpackageMac
-        ./gradlew jpackageMacDmg
-    
-    - name: Upload macOS Installers
-      uses: actions/upload-artifact@v4
-      with:
-        name: macos-installers
-        path: build/dist/*.pkg,build/dist/*.dmg
-        retention-days: 30
-
   create-release:
-    needs: [build-linux, build-windows, build-macos]
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    
+
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-    
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -125,12 +92,9 @@ jobs:
           artifacts/linux-installers/*.AppImage
           artifacts/linux-installers/*.deb
           artifacts/linux-installers/*.rpm
-          artifacts/linux-installers/*.snap
           artifacts/windows-installer/*.exe
-          artifacts/macos-installers/*.pkg
-          artifacts/macos-installers/*.dmg
         draft: false
         prerelease: false
         generate_release_notes: true
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
