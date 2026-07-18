@@ -120,7 +120,7 @@ Para garantir qualidade e estabilidade, o projeto conta com uma suíte abrangent
 
 ## 🚀 Como Usar
 
-1. **Download**: Baixe o instalador para Windows
+1. **Download**: Baixe o instalador
 2. **Instale**: Execute o instalador e siga as instruções
 3. **Execute**: Abra o aplicativo e comece a usar imediatamente
 4. **Produza**: Foque nas suas tarefas, não na ferramenta

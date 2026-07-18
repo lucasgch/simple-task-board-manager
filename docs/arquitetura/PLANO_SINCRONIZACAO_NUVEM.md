@@ -200,8 +200,12 @@ Nenhuma nova: `MessageDigest` (SHA-256), NIO `WatchService`/`Files`, `java.util.
 - ✅ Import com hash divergente do manifest (simula download parcial/placeholder)
   → aborta sem tocar no banco local.
 - ✅ Conflito, resoluções keep-local/use-remote, histórico com retenção e watcher.
-- ⏸ Restore sobre banco com schema mais antigo/mais novo (interação com
-  migrações) — pendente; o manifest já carrega `schemaVersion` para isso.
+- ✅ Restore entre versões de schema (interação com as migrações idempotentes
+  de `DatabaseMigrationConfig`): snapshot antigo é importado fielmente e as
+  migrações do startup completam o schema sem perder dados (e o ciclo de sync
+  continua com o banco migrado); snapshot mais novo preserva tabelas/colunas
+  desconhecidas através do restore e das migrações atuais. O `schemaVersion`
+  do manifest segue reservado para gating futuro, se necessário.
 
 ### Manuais (cenários de borda)
 - Duas instâncias do app na mesma máquina (`AUTO_SERVER=TRUE`).
