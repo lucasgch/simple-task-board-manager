@@ -6,7 +6,7 @@ package org.desviante.sync;
  * <p>Define quando a sincronização (export/import de snapshots do banco)
  * é executada. Ver {@code docs/PLANO_SINCRONIZACAO_NUVEM.md}.</p>
  *
- * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lgjor">GitHub</a>
+ * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lucasgch">GitHub</a>
  * @since 1.0
  */
 public enum SyncMode {
