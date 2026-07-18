@@ -134,7 +134,7 @@ echo.
 echo Se houver problemas:
 echo - Execute: scripts\restore-database.bat
 echo - Verifique os logs da aplicação
-echo - Consulte: GUIA_ATUALIZACAO.md
+echo - Consulte: docs\instalacao\GUIA_ATUALIZACAO.md
 echo.
 echo Pressione qualquer tecla para finalizar...
 pause >NUL 

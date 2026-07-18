@@ -135,7 +135,7 @@ echo 3. Consulte a documentação se necessário
 echo.
 echo Para suporte:
 echo - GitHub: https://github.com/lgjor/simple-task-board-manager
-echo - Documentação: GUIA_ATUALIZACAO.md
+echo - Documentação: docs\instalacao\GUIA_ATUALIZACAO.md
 echo.
 echo Pressione qualquer tecla para finalizar...
 pause >NUL 

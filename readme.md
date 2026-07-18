@@ -151,7 +151,7 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 ./scripts/check-database.sh
 ```
 
-**📖 [Guia Completo de Atualização](ATUALIZACAO_BANCO_DADOS.md)**
+**📖 [Guia Completo de Atualização](docs/instalacao/ATUALIZACAO_BANCO_DADOS.md)**
 
 ## 📦 Instalação
 

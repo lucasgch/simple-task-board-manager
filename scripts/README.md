@@ -60,7 +60,7 @@ Se preferir configurar manualmente:
 
 1. **Crie o diretório**: `~/myboards/config`
 2. **Crie o arquivo**: `app-metadata.json`
-3. **Adicione o conteúdo** conforme exemplo em `EXEMPLO_CONFIGURACAO_CARDS.md`
+3. **Adicione o conteúdo** conforme exemplo em `docs/configuracao/EXEMPLO_CONFIGURACAO_CARDS.md`
 4. **Reinicie a aplicação**
 
 ## Reinicialização
