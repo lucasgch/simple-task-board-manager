@@ -41,6 +41,9 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Artefatos compilados avulsos (fora do build) ###
+*.class
+
 ## Credentials and keys ##
 !**/src/main/resourcers/credentials.json
 !**/src/test/resources/credentials.json
