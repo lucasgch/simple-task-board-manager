@@ -1,10 +1,14 @@
 package org.desviante.view;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import org.desviante.sync.SyncMode;
 import org.desviante.config.AppMetadataConfig;
 import org.desviante.model.CardType;
 import org.desviante.model.BoardGroup;
@@ -71,7 +75,19 @@ public class PreferencesController {
     
     @FXML
     private ComboBox<String> defaultStatusFilterComboBox;
-    
+
+    @FXML
+    private CheckBox syncEnabledCheckBox;
+
+    @FXML
+    private TextField syncFolderField;
+
+    @FXML
+    private Button chooseSyncFolderButton;
+
+    @FXML
+    private ComboBox<SyncMode> syncModeComboBox;
+
     @FXML
     private Button saveButton;
     
@@ -169,6 +185,36 @@ public class PreferencesController {
                 updateSaveButtonState();
             }
         });
+
+        // Configurar seção de sincronização entre dispositivos
+        syncModeComboBox.getItems().addAll(SyncMode.values());
+        syncModeComboBox.setCellFactory(param -> new SyncModeListCell());
+        syncModeComboBox.setButtonCell(new SyncModeListCell());
+
+        // Pasta e modo só fazem sentido com a sincronização habilitada
+        syncFolderField.disableProperty().bind(syncEnabledCheckBox.selectedProperty().not());
+        chooseSyncFolderButton.disableProperty().bind(syncEnabledCheckBox.selectedProperty().not());
+        syncModeComboBox.disableProperty().bind(syncEnabledCheckBox.selectedProperty().not());
+    }
+
+    /**
+     * Abre o seletor de diretórios para a pasta de sincronização.
+     */
+    @FXML
+    private void handleChooseSyncFolder() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Escolha a pasta sincronizada pela nuvem");
+        String current = syncFolderField.getText();
+        if (current != null && !current.isBlank()) {
+            java.io.File currentDir = new java.io.File(current);
+            if (currentDir.isDirectory()) {
+                chooser.setInitialDirectory(currentDir);
+            }
+        }
+        java.io.File chosen = chooser.showDialog(syncFolderField.getScene().getWindow());
+        if (chosen != null) {
+            syncFolderField.setText(chosen.getAbsolutePath());
+        }
     }
     
     /**
@@ -309,7 +355,12 @@ public class PreferencesController {
             
             // Forçar atualização do ComboBox
             defaultStatusFilterComboBox.requestLayout();
-            
+
+            // Carregar configurações de sincronização entre dispositivos
+            syncEnabledCheckBox.setSelected(appMetadataConfig.isSyncEnabled());
+            syncFolderField.setText(appMetadataConfig.getSyncFolderPath().orElse(""));
+            syncModeComboBox.setValue(appMetadataConfig.getSyncMode());
+
             // Atualizar estado do botão de salvar
             updateSaveButtonState();
             log.debug("Preferências carregadas com sucesso");
@@ -342,7 +393,18 @@ public class PreferencesController {
             
             // Filtro de status pode ser null (Todos os Status)
             // Não é obrigatório, então não validamos aqui
-            
+
+            // Sincronização: com o recurso habilitado, a pasta é obrigatória
+            boolean newSyncEnabled = syncEnabledCheckBox.isSelected();
+            String newSyncFolder = syncFolderField.getText() != null && !syncFolderField.getText().isBlank()
+                    ? syncFolderField.getText().trim() : null;
+            SyncMode newSyncMode = syncModeComboBox.getValue() != null
+                    ? syncModeComboBox.getValue() : SyncMode.MANUAL;
+            if (newSyncEnabled && newSyncFolder == null) {
+                showAlert("Aviso", "Escolha a pasta de sincronização ou desabilite a sincronização.");
+                return;
+            }
+
             // Log das seleções para debug
             BoardGroup selectedGroup = defaultBoardGroupComboBox.getValue();
             String selectedStatusFilter = defaultStatusFilterComboBox.getValue();
@@ -400,8 +462,16 @@ public class PreferencesController {
             String currentFilterValue = currentStatusFilter.orElse(null);
             if (!java.util.Objects.equals(currentFilterValue, selectedStatusFilter)) {
                 hasChanges = true;
-                log.debug("Mudança detectada no filtro de status padrão: {} -> {}", 
+                log.debug("Mudança detectada no filtro de status padrão: {} -> {}",
                         currentFilterValue, selectedStatusFilter);
+            }
+
+            // Verificar mudanças na sincronização entre dispositivos
+            if (appMetadataConfig.isSyncEnabled() != newSyncEnabled
+                    || !java.util.Objects.equals(appMetadataConfig.getSyncFolderPath().orElse(null), newSyncFolder)
+                    || appMetadataConfig.getSyncMode() != newSyncMode) {
+                hasChanges = true;
+                log.debug("Mudança detectada nas configurações de sincronização");
             }
             
             if (!hasChanges) {
@@ -436,6 +506,18 @@ public class PreferencesController {
                 // Aplicar o filtro de status padrão
                 metadata.setDefaultStatusFilter(finalSelectedStatusFilter);
                 log.debug("Definindo filtro de status padrão como: {}", finalSelectedStatusFilter);
+
+                // Aplicar configurações de sincronização entre dispositivos
+                metadata.setSyncEnabled(newSyncEnabled);
+                metadata.setSyncFolderPath(newSyncFolder);
+                metadata.setSyncMode(newSyncMode);
+                if (newSyncEnabled
+                        && (metadata.getSyncDeviceId() == null || metadata.getSyncDeviceId().isBlank())) {
+                    // Primeira ativação neste dispositivo: gerar o identificador
+                    // usado no manifest de sync para detectar a origem dos snapshots
+                    metadata.setSyncDeviceId(java.util.UUID.randomUUID().toString());
+                    log.info("deviceId de sincronização gerado na primeira ativação");
+                }
             });
             
             log.info("Preferências salvas com sucesso");
@@ -594,6 +676,24 @@ public class PreferencesController {
         return noGroup;
     }
     
+    /**
+     * Célula personalizada para exibir modos de sincronização no ComboBox.
+     */
+    private static class SyncModeListCell extends javafx.scene.control.ListCell<SyncMode> {
+        @Override
+        protected void updateItem(SyncMode item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(switch (item) {
+                    case MANUAL -> "Manual (botão Sincronizar)";
+                    case ON_OPEN_CLOSE -> "Automático ao abrir e fechar";
+                });
+            }
+        }
+    }
+
     /**
      * Célula personalizada para exibir filtros de status no ComboBox.
      */

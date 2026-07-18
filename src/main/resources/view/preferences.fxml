@@ -55,6 +55,37 @@
             </VBox>
         </VBox>
         
+        <!-- Seção de sincronização entre dispositivos -->
+        <VBox spacing="15" styleClass="preferences-section">
+            <VBox spacing="10">
+                <Label text="Sincronização entre Dispositivos" styleClass="section-title" />
+                <CheckBox fx:id="syncEnabledCheckBox"
+                          text="Sincronizar dados via pasta de nuvem (Dropbox, Google Drive, OneDrive)" />
+
+                <GridPane hgap="15" vgap="10" styleClass="grid-pane">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="NEVER" minWidth="180" prefWidth="200" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="250" prefWidth="350" />
+                    </columnConstraints>
+
+                    <Label text="Pasta de Sincronização:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <TextField fx:id="syncFolderField" editable="false" HBox.hgrow="ALWAYS"
+                                   promptText="Escolha uma pasta sincronizada pelo provedor de nuvem" />
+                        <Button fx:id="chooseSyncFolderButton" text="Escolher..."
+                                onAction="#handleChooseSyncFolder" />
+                    </HBox>
+
+                    <Label text="Modo de Sincronização:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <ComboBox fx:id="syncModeComboBox" promptText="Selecione o modo"
+                             GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                </GridPane>
+
+                <Label text="A pasta escolhida deve estar em modo espelho ('sempre manter neste dispositivo'). Os dados são publicados como snapshot na subpasta SimpleTaskBoard — o banco em uso nunca fica na nuvem. Dados novos da nuvem são importados ao abrir o aplicativo."
+                       styleClass="info-text" wrapText="true" />
+            </VBox>
+        </VBox>
+
         <!-- Seção de informações -->
         <VBox spacing="12" styleClass="info-section">
             <VBox spacing="10">

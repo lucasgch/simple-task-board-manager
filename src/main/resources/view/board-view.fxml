@@ -40,6 +40,8 @@
                 </HBox>
                 <Separator orientation="VERTICAL" />
                 <Button fx:id="refreshButton" onAction="#handleRefresh" text="Atualizar" styleClass="btn-ghost" />
+                <Button fx:id="syncNowButton" onAction="#handleSyncNow" text="☁ Sincronizar" styleClass="btn-outline" />
+                <Label fx:id="syncStatusLabel" styleClass="label-key" />
                 <Button fx:id="customTypesButton" onAction="#handleCardTypes" text="Tipos de Card" styleClass="btn-outline" />
                 <Button fx:id="preferencesButton" onAction="#handlePreferences" text="Preferências" styleClass="btn-outline" />
                 <Button fx:id="googleTaskButton" onAction="#handleGoogleTask" text="Google Task" styleClass="btn-ghost" />

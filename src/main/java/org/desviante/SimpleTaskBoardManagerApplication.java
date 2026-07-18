@@ -96,6 +96,13 @@ public class SimpleTaskBoardManagerApplication {
         // Se necessário, exibe diálogo para o usuário escolher outra pasta.
         org.desviante.util.DataDirectoryPreflight.ensureWritableDataDirectory();
 
+        // Sincronização via pasta de nuvem: verifica/importa o snapshot remoto
+        // AQUI, antes de o Spring abrir o datasource — único momento em que o
+        // banco está garantidamente fechado (DB_CLOSE_DELAY=-1 mantém o engine
+        // vivo até a JVM morrer). Nunca lança exceção; em conflito apenas
+        // sinaliza e a UI mostra o estado após o start.
+        org.desviante.sync.SnapshotImportService.runStartupImportIfEnabled();
+
         // A mágica acontece aqui:
         // 1. O SpringApplication.run() é chamado de forma NÃO-BLOQUEANTE.
         // 2. Ele retorna o contexto da aplicação totalmente inicializado.

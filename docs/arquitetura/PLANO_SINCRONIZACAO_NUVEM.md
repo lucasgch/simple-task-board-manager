@@ -103,14 +103,35 @@ Nenhuma nova: `MessageDigest` (SHA-256), NIO `WatchService`/`Files`, `java.util.
    antigos em `AppMetadataConfig` e `@JsonIgnoreProperties(ignoreUnknown = true)` para
    tolerar campos de versões mais novas.
 
-### Fase 1 — Export/import manual (MVP)
+### Fase 1 — Export/import manual (MVP) ✅ concluída em 2026-07-18
 
-1. `SyncManifest`, `SyncStateRepository`, `BackupManager`.
-2. `SnapshotExportService` (com escrita atômica e lock local via `FileChannel.tryLock`
-   para impedir dois exports simultâneos na mesma máquina).
-3. `SnapshotImportService` com hook no `main()`.
-4. `ConflictDetector` (sem UI de resolução ainda: em conflito, não importa e sinaliza).
-5. UI de preferências + botão "Sincronizar agora" + indicador de status.
+1. ✅ `SyncManifest`, `SyncState`, `SyncStateRepository` (escritas atômicas via
+   temp + `ATOMIC_MOVE`), `BackupManager` (backups físicos pré-import, retenção 5).
+2. ✅ `SnapshotExportService` com lock local (`FileChannel.tryLock`), publicação
+   atômica na subpasta `SimpleTaskBoard/` e manifest com dois hashes:
+   `sha256` (arquivo .gz, integridade de transferência) e `contentSha256`
+   (SQL descomprimido, detecção de dirty sem hooks nos services de escrita —
+   o hash do conteúdo atual é comparado ao da última sincronização).
+3. ✅ `SnapshotImportService` com hook no `main()` (após o pre-flight, antes do
+   Spring), JDBC puro com URL sem `AUTO_SERVER`/`DB_CLOSE_DELAY`. Sequência:
+   valida hash → backup físico → `RUNSCRIPT` em banco recriado → valida tabelas
+   obrigatórias → re-script para registrar o `contentSha256` canônico (round-trip
+   `RUNSCRIPT`+`SCRIPT` não é byte-idêntico). Falha restaura o backup; banco em
+   uso por outro processo pula o import. Banco local inexistente + snapshot na
+   nuvem = restore direto (caso fora da matriz geração×dirty).
+4. ✅ `ConflictDetector` (matriz por geração monotônica, sem timestamps; geração
+   remota regredida também é conflito). Em conflito nada é importado/exportado —
+   apenas sinalizado (`pendingConflict` no sync-state + indicador ⚠ na UI).
+5. ✅ UI: seção de sincronização em `preferences.fxml` (toggle + `DirectoryChooser`
+   + modo, com deviceId UUID gerado na primeira ativação); botão "☁ Sincronizar"
+   e label de status na toolbar do `BoardViewController` (sync roda em thread de
+   background; status do import de startup refletido ao abrir).
+
+   Testes: matriz completa do `ConflictDetector`; round-trip de serialização de
+   manifest/estado (incl. corrompidos e campos desconhecidos); integração em H2
+   temporário — export → wipe → import com contagem de linhas em **todas** as
+   tabelas via `INFORMATION_SCHEMA`, hash divergente aborta sem tocar no banco,
+   conflito sinalizado com banco intacto.
 
 ### Fase 2 — Automação e resolução de conflito
 

@@ -71,6 +71,10 @@ public class BoardViewController {
     @Autowired
     private org.desviante.integration.observer.UIEventBridge uiEventBridge;
 
+    // Sincronização manual via pasta de nuvem (botão "Sincronizar")
+    @Autowired
+    private org.desviante.sync.SnapshotExportService snapshotExportService;
+
     // --- Componentes da Tabela de Boards ---
     @FXML
     private TableView<BoardSummaryDTO> boardsTableView;
@@ -134,6 +138,11 @@ public class BoardViewController {
     @FXML
     private Button calendarButton;
 
+    @FXML
+    private Button syncNowButton;
+    @FXML
+    private javafx.scene.control.Label syncStatusLabel;
+
     // Mapa para rastrear o nó visual de cada card pelo seu ID.
     private final Map<Long, Node> cardNodeMap = new HashMap<>();
 
@@ -182,6 +191,68 @@ public class BoardViewController {
         );
 
         loadBoards();
+        updateSyncStatusFromStartup();
+    }
+
+    /**
+     * Exibe o resultado da verificação de sincronização feita no startup
+     * (import roda no main(), antes de o Spring subir; aqui só refletimos).
+     */
+    private void updateSyncStatusFromStartup() {
+        if (appMetadataConfig == null || !appMetadataConfig.isSyncEnabled()) {
+            syncStatusLabel.setText("");
+            return;
+        }
+        switch (org.desviante.sync.SnapshotImportService.getLastStartupResult()) {
+            case IMPORTED -> syncStatusLabel.setText("✓ Dados da nuvem importados");
+            case UP_TO_DATE -> syncStatusLabel.setText("✓ Sincronizado");
+            case LOCAL_CHANGES_PENDING -> syncStatusLabel.setText("Alterações locais pendentes");
+            case CONFLICT -> syncStatusLabel.setText("⚠ Conflito de sincronização");
+            case HASH_MISMATCH -> syncStatusLabel.setText("⚠ Nuvem ainda baixando dados");
+            case SKIPPED_DB_IN_USE -> syncStatusLabel.setText("⚠ Banco em uso — sync pulado");
+            case ERROR -> syncStatusLabel.setText("⚠ Erro na sincronização");
+            default -> syncStatusLabel.setText("");
+        }
+    }
+
+    /**
+     * Sincroniza manualmente com a pasta de nuvem (botão "Sincronizar").
+     *
+     * <p>Roda em thread de background para não travar a UI durante o
+     * {@code SCRIPT TO} e a cópia para a pasta de nuvem.</p>
+     */
+    @FXML
+    private void handleSyncNow() {
+        syncNowButton.setDisable(true);
+        syncStatusLabel.setText("Sincronizando...");
+        Thread syncThread = new Thread(() -> {
+            org.desviante.sync.SyncResult result = snapshotExportService.syncNow();
+            javafx.application.Platform.runLater(() -> {
+                syncNowButton.setDisable(false);
+                switch (result.status()) {
+                    case EXPORTED -> syncStatusLabel.setText("✓ Sincronizado");
+                    case UP_TO_DATE -> syncStatusLabel.setText("✓ Sincronizado");
+                    case REMOTE_NEWER -> {
+                        syncStatusLabel.setText("Reinicie para importar");
+                        showInfo("Sincronização", result.message());
+                    }
+                    case CONFLICT -> {
+                        syncStatusLabel.setText("⚠ Conflito de sincronização");
+                        showError("Sincronização", result.message());
+                    }
+                    case DISABLED -> {
+                        syncStatusLabel.setText("");
+                        showInfo("Sincronização", result.message());
+                    }
+                    case ERROR -> {
+                        syncStatusLabel.setText("⚠ Erro na sincronização");
+                        showError("Sincronização", result.message());
+                    }
+                }
+            });
+        }, "sync-manual");
+        syncThread.setDaemon(true);
+        syncThread.start();
     }
 
         private void setupResizableSeparator() {
