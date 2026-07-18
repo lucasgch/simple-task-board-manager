@@ -180,18 +180,28 @@ Nenhuma nova: `MessageDigest` (SHA-256), NIO `WatchService`/`Files`, `java.util.
 
 ## 4. Testes
 
-### Unitários
-- Matriz completa do `ConflictDetector` (4 estados × cenários de clock skew).
-- Round-trip de serialização do manifest e do sync-state.
-- Atomicidade do export: simular falha entre escrita do temp e o `ATOMIC_MOVE`
-  (nuvem nunca vê arquivo parcial).
+### Unitários ✅ implementados (2026-07-18, `src/test/java/org/desviante/sync/`)
+- ✅ Matriz completa do `ConflictDetector` (4 estados; sem timestamps, imune a clock skew).
+- ✅ Round-trip de serialização do manifest e do sync-state (incl. arquivos
+  corrompidos, campos desconhecidos de versões futuras e escrita atômica).
+- ✅ Atomicidade do export: crash simulado entre a escrita do temp e o
+  `ATOMIC_MOVE` — temporários órfãos nunca são lidos como dados válidos e o
+  export seguinte publica um par snapshot+manifest consistente.
+- ✅ `SyncHashes` (vetor NIST; hash de conteúdo ≠ hash do .gz; gzip inválido falha),
+  `BackupManager` (cópia fiel, retenção, arquivos alheios intactos),
+  helpers de URL/placeholder do import (aninhados, como na URL real) e
+  guardas do export (desabilitado, pasta ausente, lock local ocupado,
+  geração e persistência do deviceId) com Mockito.
 
-### Integração (H2 temporário)
-- Export → wipe → import → `DatabaseIntegrityChecker` + contagem de linhas em **todas** as
-  tabelas (proteção permanente contra backup incompleto).
-- Import com hash divergente do manifest (simula download parcial/placeholder) → aborta sem
-  tocar no banco local.
-- Restore sobre banco com schema mais antigo/mais novo (interação com migrações).
+### Integração (H2 temporário) ✅ implementados
+- ✅ Export → wipe → import → contagem de linhas em **todas** as tabelas via
+  `INFORMATION_SCHEMA` (proteção permanente contra backup incompleto);
+  validação de tabelas obrigatórias no próprio import.
+- ✅ Import com hash divergente do manifest (simula download parcial/placeholder)
+  → aborta sem tocar no banco local.
+- ✅ Conflito, resoluções keep-local/use-remote, histórico com retenção e watcher.
+- ⏸ Restore sobre banco com schema mais antigo/mais novo (interação com
+  migrações) — pendente; o manifest já carrega `schemaVersion` para isso.
 
 ### Manuais (cenários de borda)
 - Duas instâncias do app na mesma máquina (`AUTO_SERVER=TRUE`).

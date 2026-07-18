@@ -218,6 +218,33 @@ class SnapshotSyncIntegrationTest {
     }
 
     @Test
+    @DisplayName("Atomicidade: crash entre o temp e o ATOMIC_MOVE nunca deixa a nuvem inconsistente")
+    void crashBeforeAtomicMoveLeavesCloudConsistent() throws Exception {
+        setupDatabase();
+        Path syncDir = Files.createDirectories(SyncStateRepository.resolveSyncDir(cloudFolder));
+
+        // Simula um export que morreu entre a escrita do temp e o ATOMIC_MOVE:
+        // só os arquivos temporários existem na pasta de nuvem.
+        Files.writeString(syncDir.resolve(
+                SyncStateRepository.SNAPSHOT_FILENAME + ".tmp-abc123"), "parcial");
+        Files.writeString(syncDir.resolve(
+                SyncStateRepository.MANIFEST_FILENAME + ".tmp-def456"), "{\"generation\":");
+
+        // Importadores nunca enxergam os temporários como dados válidos
+        assertEquals(SnapshotImportService.StartupImportResult.NO_REMOTE, importService().run(),
+                "Temporários órfãos não podem ser confundidos com manifest/snapshot");
+
+        // Um novo export se recupera normalmente e publica um par consistente
+        SyncResult exported = exportService().sync(dataDir, cloudFolder, "device-A");
+        assertEquals(SyncResult.Status.EXPORTED, exported.status(), exported.message());
+
+        Path snapshot = syncDir.resolve(SyncStateRepository.SNAPSHOT_FILENAME);
+        SyncManifest manifest = new SyncStateRepository(dataDir).loadManifest(syncDir).orElseThrow();
+        assertEquals(SyncHashes.sha256OfFile(snapshot), manifest.getSha256(),
+                "Snapshot e manifest publicados devem ser consistentes entre si");
+    }
+
+    @Test
     @DisplayName("Histórico na nuvem: gerações anteriores preservadas com retenção")
     void snapshotHistoryKeepsPreviousGenerationsWithRetention() throws Exception {
         setupDatabase();
