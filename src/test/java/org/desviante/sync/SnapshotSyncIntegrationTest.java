@@ -216,4 +216,93 @@ class SnapshotSyncIntegrationTest {
         setupDatabase();
         assertEquals(SnapshotImportService.StartupImportResult.NO_REMOTE, importService().run());
     }
+
+    /**
+     * Cria um cenário de conflito: export deste dispositivo, alteração
+     * local não sincronizada e uma geração mais nova publicada na nuvem
+     * por outro dispositivo.
+     *
+     * @return geração remota após o "push" do outro dispositivo
+     */
+    private long createConflict() throws Exception {
+        setupDatabase();
+        SyncResult exported = exportService().sync(dataDir, cloudFolder, "device-A");
+        assertEquals(SyncResult.Status.EXPORTED, exported.status(), exported.message());
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, DB_USER, DB_PASSWORD);
+             Statement statement = connection.createStatement()) {
+            statement.execute("INSERT INTO boards (id, name, creation_date) VALUES (999, 'Local', CURRENT_TIMESTAMP)");
+        }
+
+        SyncStateRepository repository = new SyncStateRepository(dataDir);
+        Path syncDir = SyncStateRepository.resolveSyncDir(cloudFolder);
+        SyncManifest manifest = repository.loadManifest(syncDir).orElseThrow();
+        manifest.setGeneration(manifest.getGeneration() + 1);
+        manifest.setDeviceId("device-B");
+        repository.saveManifest(syncDir, manifest);
+        return manifest.getGeneration();
+    }
+
+    @Test
+    @DisplayName("Resolução 'manter local': arquiva o snapshot remoto e publica nova geração")
+    void keepLocalArchivesRemoteAndPushes() throws Exception {
+        long remoteGeneration = createConflict();
+        Path syncDir = SyncStateRepository.resolveSyncDir(cloudFolder);
+
+        SyncResult resolved = exportService().resolveKeepLocal(dataDir, cloudFolder, "device-A");
+        assertEquals(SyncResult.Status.EXPORTED, resolved.status(), resolved.message());
+
+        // A versão anterior da nuvem foi arquivada, não apagada
+        try (Stream<Path> files = Files.list(syncDir)) {
+            assertTrue(files.map(p -> p.getFileName().toString())
+                            .anyMatch(n -> n.startsWith("conflito-") && n.endsWith(".sql.gz")),
+                    "Snapshot remoto deve ser arquivado como conflito-*.sql.gz");
+        }
+
+        SyncStateRepository repository = new SyncStateRepository(dataDir);
+        SyncManifest manifest = repository.loadManifest(syncDir).orElseThrow();
+        assertEquals(remoteGeneration + 1, manifest.getGeneration(),
+                "Push da resolução deve avançar a geração remota");
+        assertEquals("device-A", manifest.getDeviceId());
+
+        SyncState state = repository.loadState();
+        assertFalse(state.isPendingConflict(), "Conflito deve ser limpo após a resolução");
+        assertFalse(state.isResolveWithRemote());
+
+        // O snapshot publicado corresponde ao banco local (com a alteração)
+        SyncResult afterwards = exportService().sync(dataDir, cloudFolder, "device-A");
+        assertEquals(SyncResult.Status.UP_TO_DATE, afterwards.status(), afterwards.message());
+    }
+
+    @Test
+    @DisplayName("Resolução 'usar nuvem': import no próximo startup mesmo com alterações locais, com backup")
+    void useRemoteImportsOnNextStartupWithBackup() throws Exception {
+        long remoteGeneration = createConflict();
+        long boardsWithLocalChange = countAllTables().get("BOARDS");
+
+        SyncResult resolved = exportService().resolveUseRemote(dataDir, cloudFolder, "device-A");
+        assertEquals(SyncResult.Status.REMOTE_NEWER, resolved.status(), resolved.message());
+
+        SyncStateRepository repository = new SyncStateRepository(dataDir);
+        assertTrue(repository.loadState().isResolveWithRemote(),
+                "Decisão deve ficar persistida para o próximo startup");
+
+        // Próximo startup: pull acontece apesar do banco local estar dirty
+        assertEquals(SnapshotImportService.StartupImportResult.IMPORTED, importService().run());
+
+        SyncState state = repository.loadState();
+        assertFalse(state.isResolveWithRemote(), "Flag deve ser limpo após o import");
+        assertFalse(state.isPendingConflict());
+        assertEquals(remoteGeneration, state.getLastSyncedGeneration());
+
+        assertEquals(boardsWithLocalChange - 1, countAllTables().get("BOARDS"),
+                "Alteração local deve ser substituída pelos dados da nuvem");
+
+        // O banco pré-import foi preservado em backup físico
+        try (Stream<Path> files = Files.list(dataDir.resolve("backups"))) {
+            assertTrue(files.map(p -> p.getFileName().toString())
+                            .anyMatch(n -> n.startsWith("pre_import_")),
+                    "Backup físico pré-import deve existir");
+        }
+    }
 }

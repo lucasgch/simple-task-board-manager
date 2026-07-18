@@ -73,6 +73,7 @@ public class SnapshotImportService {
     };
 
     private static volatile StartupImportResult lastStartupResult = StartupImportResult.DISABLED;
+    private static volatile java.util.List<String> lastConflictedCopies = java.util.List.of();
 
     private final Path dataDir;
     private final Path cloudFolder;
@@ -153,6 +154,16 @@ public class SnapshotImportService {
     }
 
     /**
+     * Cópias em conflito criadas pelo provedor de nuvem, detectadas na
+     * última verificação de startup — para aviso na UI.
+     *
+     * @return nomes de arquivo suspeitos (vazio se nada detectado)
+     */
+    public static java.util.List<String> getLastConflictedCopies() {
+        return lastConflictedCopies;
+    }
+
+    /**
      * Executa a verificação e, se o estado for {@link SyncStatus#PULL}, o import.
      *
      * @return desfecho da operação
@@ -160,6 +171,7 @@ public class SnapshotImportService {
     public StartupImportResult run() {
         SyncStateRepository repository = new SyncStateRepository(dataDir);
         Path syncDir = SyncStateRepository.resolveSyncDir(cloudFolder);
+        lastConflictedCopies = ConflictedCopyDetector.findConflictedCopies(syncDir);
         Optional<SyncManifest> remoteOpt = repository.loadManifest(syncDir);
         if (remoteOpt.isEmpty()) {
             log.info("Sem manifest em {} — nada a importar", syncDir);
@@ -179,6 +191,27 @@ public class SnapshotImportService {
                 return importSnapshot(repository, syncDir, remote, state);
             } catch (IOException e) {
                 log.error("Falha ao restaurar snapshot da nuvem", e);
+                return StartupImportResult.ERROR;
+            }
+        }
+
+        // Decisão do diálogo de conflito: "usar os dados da nuvem". O pull é
+        // executado mesmo com alterações locais (o backup físico prévio dentro
+        // de importSnapshot preserva o banco atual). Antes, uma conexão de
+        // sondagem garante que o banco não está em uso por outro processo.
+        if (state.isResolveWithRemote()) {
+            log.info("Resolução de conflito registrada: usar os dados da nuvem (geração {})",
+                    remote.getGeneration());
+            try (Connection probe = DriverManager.getConnection(jdbcUrl, dbUser, dbPassword)) {
+                // Sondagem apenas — fecha antes do import
+            } catch (SQLException e) {
+                log.warn("Banco local em uso por outro processo — import pulado ({})", e.getMessage());
+                return StartupImportResult.SKIPPED_DB_IN_USE;
+            }
+            try {
+                return importSnapshot(repository, syncDir, remote, state);
+            } catch (IOException e) {
+                log.error("Falha ao importar snapshot da nuvem (resolução de conflito)", e);
                 return StartupImportResult.ERROR;
             }
         }
@@ -269,6 +302,7 @@ public class SnapshotImportService {
             state.setLastSyncedGeneration(remote.getGeneration());
             state.setLastSyncedContentSha256(newContentSha);
             state.setPendingConflict(false);
+            state.setResolveWithRemote(false);
             state.setLastSyncAt(Instant.now().toString());
             repository.saveState(state);
 

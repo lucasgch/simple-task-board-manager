@@ -45,6 +45,17 @@ public class SyncState {
     private boolean pendingConflict = false;
 
     /**
+     * Decisão do usuário no diálogo de conflito: "usar os dados da nuvem".
+     *
+     * <p>O import só pode acontecer no startup (banco fechado), então a
+     * escolha é persistida aqui e executada na próxima abertura — o pull é
+     * feito mesmo com alterações locais (com backup físico prévio), e o
+     * flag é limpo após o import bem-sucedido.</p>
+     */
+    @Builder.Default
+    private boolean resolveWithRemote = false;
+
+    /**
      * Momento da última sincronização bem-sucedida (ISO-8601, informativo).
      */
     private String lastSyncAt;

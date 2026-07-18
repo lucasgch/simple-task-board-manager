@@ -29,6 +29,7 @@ class SyncStateRepositoryTest {
                 .lastSyncedGeneration(42)
                 .lastSyncedContentSha256("abc123")
                 .pendingConflict(true)
+                .resolveWithRemote(true)
                 .lastSyncAt("2026-07-18T12:00:00Z")
                 .build();
 
@@ -38,6 +39,7 @@ class SyncStateRepositoryTest {
         assertEquals(42, loaded.getLastSyncedGeneration());
         assertEquals("abc123", loaded.getLastSyncedContentSha256());
         assertTrue(loaded.isPendingConflict());
+        assertTrue(loaded.isResolveWithRemote());
         assertEquals("2026-07-18T12:00:00Z", loaded.getLastSyncAt());
     }
 

@@ -137,7 +137,35 @@ public class MainApp extends Application {
         if (windowManager != null) {
             windowManager.closeAllSecondaryWindows();
         }
-        
+
+        // Export automático de sincronização ANTES de fechar o contexto:
+        // SCRIPT TO é online-safe, então o pool ainda pode estar aberto.
+        exportSnapshotOnCloseIfEnabled();
+
         springContext.close();
+    }
+
+    /**
+     * Exporta o snapshot para a pasta de nuvem no fechamento, quando a
+     * sincronização está habilitada no modo automático (ON_OPEN_CLOSE).
+     *
+     * <p>Em conflito nada é exportado — o estado fica sinalizado e o
+     * diálogo de resolução aparece na próxima abertura. Falhas nunca
+     * impedem o encerramento do aplicativo.</p>
+     */
+    private void exportSnapshotOnCloseIfEnabled() {
+        try {
+            org.desviante.config.AppMetadataConfig config =
+                    springContext.getBean(org.desviante.config.AppMetadataConfig.class);
+            if (!config.isSyncEnabled()
+                    || config.getSyncMode() != org.desviante.sync.SyncMode.ON_OPEN_CLOSE) {
+                return;
+            }
+            org.desviante.sync.SyncResult result =
+                    springContext.getBean(org.desviante.sync.SnapshotExportService.class).syncNow();
+            System.out.println("Sync no fechamento: " + result.status() + " — " + result.message());
+        } catch (Exception e) {
+            System.err.println("Falha no export de sincronização no fechamento: " + e.getMessage());
+        }
     }
 }

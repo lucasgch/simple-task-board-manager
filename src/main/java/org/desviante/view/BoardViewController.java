@@ -197,6 +197,7 @@ public class BoardViewController {
     /**
      * Exibe o resultado da verificação de sincronização feita no startup
      * (import roda no main(), antes de o Spring subir; aqui só refletimos).
+     * Em conflito, abre o diálogo de resolução após a UI carregar.
      */
     private void updateSyncStatusFromStartup() {
         if (appMetadataConfig == null || !appMetadataConfig.isSyncEnabled()) {
@@ -207,12 +208,88 @@ public class BoardViewController {
             case IMPORTED -> syncStatusLabel.setText("✓ Dados da nuvem importados");
             case UP_TO_DATE -> syncStatusLabel.setText("✓ Sincronizado");
             case LOCAL_CHANGES_PENDING -> syncStatusLabel.setText("Alterações locais pendentes");
-            case CONFLICT -> syncStatusLabel.setText("⚠ Conflito de sincronização");
+            case CONFLICT -> {
+                syncStatusLabel.setText("⚠ Conflito de sincronização");
+                javafx.application.Platform.runLater(this::showConflictResolutionDialog);
+            }
             case HASH_MISMATCH -> syncStatusLabel.setText("⚠ Nuvem ainda baixando dados");
             case SKIPPED_DB_IN_USE -> syncStatusLabel.setText("⚠ Banco em uso — sync pulado");
             case ERROR -> syncStatusLabel.setText("⚠ Erro na sincronização");
             default -> syncStatusLabel.setText("");
         }
+
+        // Cópias em conflito criadas pelo próprio provedor de nuvem
+        // (ex.: "boards-snapshot (conflicted copy ...)"): avisar para
+        // inspeção manual — o app nunca as lê nem apaga.
+        java.util.List<String> conflictedCopies =
+                org.desviante.sync.SnapshotImportService.getLastConflictedCopies();
+        if (!conflictedCopies.isEmpty()) {
+            syncStatusLabel.setText("⚠ Cópias em conflito na pasta de nuvem");
+            javafx.application.Platform.runLater(() -> showInfo("Sincronização",
+                    "O provedor de nuvem criou cópias em conflito na pasta de sincronização:\n\n"
+                            + String.join("\n", conflictedCopies)
+                            + "\n\nIsso acontece quando dois computadores gravam ao mesmo tempo. "
+                            + "Verifique a pasta e remova as cópias após conferir os dados."));
+        }
+    }
+
+    /**
+     * Diálogo de resolução de conflito de sincronização (Fase 2).
+     *
+     * <p>Três opções, nenhuma destrutiva: manter os dados deste computador
+     * (a versão da nuvem é arquivada como conflito-*.sql.gz), usar os dados
+     * da nuvem (import na próxima abertura, com backup local prévio) ou
+     * decidir depois (sincronização pausada, indicador ⚠).</p>
+     */
+    private void showConflictResolutionDialog() {
+        javafx.scene.control.Alert alert =
+                new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING);
+        alert.setTitle("Conflito de sincronização");
+        alert.setHeaderText("Este computador e a nuvem têm alterações diferentes.");
+        alert.setContentText("Escolha quais dados manter. Nenhuma opção apaga dados: "
+                + "a versão preterida é arquivada na nuvem ou guardada em backup local.");
+
+        javafx.scene.control.ButtonType keepLocal =
+                new javafx.scene.control.ButtonType("Manter os dados deste computador");
+        javafx.scene.control.ButtonType useRemote =
+                new javafx.scene.control.ButtonType("Usar os dados da nuvem");
+        javafx.scene.control.ButtonType decideLater = new javafx.scene.control.ButtonType(
+                "Decidir depois", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(keepLocal, useRemote, decideLater);
+
+        java.util.Optional<javafx.scene.control.ButtonType> choice = alert.showAndWait();
+        if (choice.isEmpty() || choice.get() == decideLater) {
+            syncStatusLabel.setText("⚠ Conflito de sincronização");
+            return;
+        }
+
+        boolean keep = choice.get() == keepLocal;
+        syncNowButton.setDisable(true);
+        syncStatusLabel.setText("Resolvendo conflito...");
+        Thread resolveThread = new Thread(() -> {
+            org.desviante.sync.SyncResult result = keep
+                    ? snapshotExportService.resolveConflictKeepLocal()
+                    : snapshotExportService.resolveConflictUseRemote();
+            javafx.application.Platform.runLater(() -> {
+                syncNowButton.setDisable(false);
+                switch (result.status()) {
+                    case EXPORTED -> {
+                        syncStatusLabel.setText("✓ Sincronizado");
+                        showInfo("Sincronização", result.message());
+                    }
+                    case REMOTE_NEWER -> {
+                        syncStatusLabel.setText("Reinicie para importar");
+                        showInfo("Sincronização", result.message());
+                    }
+                    default -> {
+                        syncStatusLabel.setText("⚠ Erro na sincronização");
+                        showError("Sincronização", result.message());
+                    }
+                }
+            });
+        }, "sync-conflict-resolution");
+        resolveThread.setDaemon(true);
+        resolveThread.start();
     }
 
     /**
@@ -238,7 +315,7 @@ public class BoardViewController {
                     }
                     case CONFLICT -> {
                         syncStatusLabel.setText("⚠ Conflito de sincronização");
-                        showError("Sincronização", result.message());
+                        showConflictResolutionDialog();
                     }
                     case DISABLED -> {
                         syncStatusLabel.setText("");

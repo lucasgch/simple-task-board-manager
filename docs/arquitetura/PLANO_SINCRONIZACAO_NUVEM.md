@@ -133,16 +133,31 @@ Nenhuma nova: `MessageDigest` (SHA-256), NIO `WatchService`/`Files`, `java.util.
    tabelas via `INFORMATION_SCHEMA`, hash divergente aborta sem tocar no banco,
    conflito sinalizado com banco intacto.
 
-### Fase 2 — Automação e resolução de conflito
+### Fase 2 — Automação e resolução de conflito ✅ concluída em 2026-07-18
 
-1. Export automático em `MainApp.stop()`; verificação/import automático ao abrir.
-2. Diálogo de conflito com 3 opções:
-   - **Manter os dados deste computador** — push; renomeia o snapshot remoto para
-     `conflito-<data>-<device>.sql.gz` (nada é perdido);
-   - **Usar os dados da nuvem** — pull, com backup local prévio;
-   - **Decidir depois** — sync pausado, indicador ⚠.
-3. Detecção de "conflicted copies" criadas pelos provedores (padrões de nome
-   `* (conflicted copy...`, `* (1).`, etc.) na pasta de sync.
+1. ✅ Export automático em `MainApp.stop()` (antes de `springContext.close()`,
+   pois `SCRIPT TO` é online-safe), condicionado a `syncMode == ON_OPEN_CLOSE`;
+   a verificação/import automático ao abrir já existia desde a Fase 1 (roda
+   para qualquer modo — é o único momento com o banco fechado).
+2. ✅ Diálogo de conflito com 3 opções (aparece após o start da UI quando o
+   startup detecta conflito, e também quando o botão manual retorna conflito):
+   - **Manter os dados deste computador** — `resolveConflictKeepLocal()`:
+     renomeia o snapshot remoto para `conflito-<data>-<device>.sql.gz` e
+     publica o banco local como nova geração (nada é perdido);
+   - **Usar os dados da nuvem** — `resolveConflictUseRemote()`: como import
+     exige banco fechado, a decisão é persistida (`resolveWithRemote` no
+     sync-state) e executada no próximo startup, com backup físico prévio e
+     sondagem de banco-em-uso; o flag é limpo após o import bem-sucedido;
+   - **Decidir depois** — nada muda, sync pausado, indicador ⚠.
+3. ✅ `ConflictedCopyDetector`: varre a pasta de sync no startup por padrões
+   dos provedores (`(conflicted copy`, `(cópia em conflito`, duplicatas
+   ` (N).`), excluindo os arquivamentos intencionais `conflito-*.sql.gz`;
+   a UI avisa e lista os arquivos para inspeção manual (o app nunca os apaga).
+
+   Testes: resoluções keep-local (arquiva + avança geração) e use-remote
+   (pull no startup seguinte apesar de dirty, com backup e limpeza do flag)
+   em H2 temporário; padrões do detector de cópias em conflito; round-trip
+   do novo campo de estado.
 
 ### Fase 3 — Polimento / v2
 
