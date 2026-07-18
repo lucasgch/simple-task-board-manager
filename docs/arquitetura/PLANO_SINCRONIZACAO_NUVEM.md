@@ -159,13 +159,24 @@ Nenhuma nova: `MessageDigest` (SHA-256), NIO `WatchService`/`Files`, `java.util.
    em H2 temporário; padrões do detector de cópias em conflito; round-trip
    do novo campo de estado.
 
-### Fase 3 — Polimento / v2
+### Fase 3 — Polimento / v2 ✅ itens 1–2 concluídos em 2026-07-18
 
-1. Watcher NIO na pasta de sync durante a execução: avisar "chegaram dados novos — importar
-   exige reiniciar".
-2. Histórico de N gerações de snapshots na nuvem.
-3. Merge granular por entidade (estilo KeePass Synchronize) — somente se o conflito binário
-   se mostrar doloroso na prática.
+1. ✅ `SyncFolderWatcher`: watcher NIO dedicado (o `FileWatcherService` é um
+   singleton já ocupado pelo `app-metadata.json` e só escuta `ENTRY_MODIFY`)
+   observando o `sync-manifest.json` com `ENTRY_CREATE`+`ENTRY_MODIFY`
+   (clientes de nuvem gravam via temp+rename), debounce e deduplicação por
+   geração. Quando outro dispositivo publica geração mais nova durante a
+   execução, a UI avisa: "chegaram dados novos — importar exige reiniciar".
+   Iniciado pelo `BoardViewController` quando o sync está habilitado
+   (thread daemon; nunca importa nem escreve).
+2. ✅ Histórico de gerações: antes de sobrescrever, o snapshot anterior é
+   movido para `history/boards-snapshot-g<N>.sql.gz` (retenção 5). A janela
+   entre o move e o `ATOMIC_MOVE` da nova geração é segura: manifest sem
+   snapshot correspondente aborta por hash. O arquivamento `conflito-*`
+   da resolução de conflito continua no nível raiz, fora do histórico.
+3. ⏸ Merge granular por entidade (estilo KeePass Synchronize) — mantido em
+   espera, conforme o próprio plano: somente se o conflito binário se
+   mostrar doloroso na prática.
 
 ## 4. Testes
 

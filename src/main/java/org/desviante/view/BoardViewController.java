@@ -75,6 +75,10 @@ public class BoardViewController {
     @Autowired
     private org.desviante.sync.SnapshotExportService snapshotExportService;
 
+    // Watcher NIO da pasta de sync: avisa quando chegam dados novos da nuvem
+    // durante a execução (thread daemon; morre com a JVM)
+    private org.desviante.sync.SyncFolderWatcher syncFolderWatcher;
+
     // --- Componentes da Tabela de Boards ---
     @FXML
     private TableView<BoardSummaryDTO> boardsTableView;
@@ -230,6 +234,40 @@ public class BoardViewController {
                             + String.join("\n", conflictedCopies)
                             + "\n\nIsso acontece quando dois computadores gravam ao mesmo tempo. "
                             + "Verifique a pasta e remova as cópias após conferir os dados."));
+        }
+
+        startSyncFolderWatcher();
+    }
+
+    /**
+     * Inicia o watcher da pasta de sincronização: se outro dispositivo
+     * publicar uma geração mais nova enquanto o app está aberto, avisa
+     * que o import exige reiniciar (o banco só fecha no startup).
+     */
+    private void startSyncFolderWatcher() {
+        if (syncFolderWatcher != null) {
+            return;
+        }
+        java.util.Optional<String> folder = appMetadataConfig.getSyncFolderPath();
+        if (folder.isEmpty() || folder.get().isBlank()) {
+            return;
+        }
+        java.nio.file.Path syncDir = org.desviante.sync.SyncStateRepository.resolveSyncDir(
+                java.nio.file.Paths.get(folder.get()));
+        java.nio.file.Path dataDir = java.nio.file.Paths.get(
+                org.desviante.util.DataDirectoryPreflight.dataDir());
+        syncFolderWatcher = new org.desviante.sync.SyncFolderWatcher(syncDir, dataDir,
+                generation -> javafx.application.Platform.runLater(() -> {
+                    syncStatusLabel.setText("Novos dados na nuvem — reinicie para importar");
+                    showInfo("Sincronização",
+                            "Chegaram dados novos na pasta de nuvem (geração " + generation + "). "
+                                    + "Para importá-los, feche e reabra o aplicativo.");
+                }));
+        try {
+            syncFolderWatcher.start();
+        } catch (Exception e) {
+            log.warn("Não foi possível iniciar o watcher da pasta de sincronização: {}", e.getMessage());
+            syncFolderWatcher = null;
         }
     }
 

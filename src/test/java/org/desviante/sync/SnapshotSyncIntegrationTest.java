@@ -217,6 +217,44 @@ class SnapshotSyncIntegrationTest {
         assertEquals(SnapshotImportService.StartupImportResult.NO_REMOTE, importService().run());
     }
 
+    @Test
+    @DisplayName("Histórico na nuvem: gerações anteriores preservadas com retenção")
+    void snapshotHistoryKeepsPreviousGenerationsWithRetention() throws Exception {
+        setupDatabase();
+        int totalExports = SnapshotExportService.SNAPSHOT_HISTORY_RETENTION + 2;
+
+        for (int i = 1; i <= totalExports; i++) {
+            if (i > 1) {
+                // Alteração local para tornar o banco dirty e permitir novo push
+                try (Connection connection = DriverManager.getConnection(jdbcUrl, DB_USER, DB_PASSWORD);
+                     Statement statement = connection.createStatement()) {
+                    statement.execute("INSERT INTO boards (id, name, creation_date) VALUES ("
+                            + (9000 + i) + ", 'Board " + i + "', CURRENT_TIMESTAMP)");
+                }
+            }
+            SyncResult exported = exportService().sync(dataDir, cloudFolder, "device-A");
+            assertEquals(SyncResult.Status.EXPORTED, exported.status(), exported.message());
+        }
+
+        Path syncDir = SyncStateRepository.resolveSyncDir(cloudFolder);
+        assertTrue(Files.exists(syncDir.resolve(SyncStateRepository.SNAPSHOT_FILENAME)),
+                "Snapshot corrente deve existir");
+        assertEquals(totalExports,
+                new SyncStateRepository(dataDir).loadManifest(syncDir).orElseThrow().getGeneration());
+
+        Path historyDir = syncDir.resolve(SnapshotExportService.HISTORY_SUBDIR);
+        try (Stream<Path> files = Files.list(historyDir)) {
+            var names = files.map(p -> p.getFileName().toString()).sorted().toList();
+            assertEquals(SnapshotExportService.SNAPSHOT_HISTORY_RETENTION, names.size(),
+                    "Histórico deve manter exatamente a retenção configurada: " + names);
+            // As gerações mais antigas foram removidas; as mais recentes preservadas
+            assertFalse(names.contains("boards-snapshot-g1.sql.gz"),
+                    "Geração mais antiga deve ter sido removida do histórico");
+            assertTrue(names.contains("boards-snapshot-g" + (totalExports - 1) + ".sql.gz"),
+                    "Geração imediatamente anterior deve estar no histórico");
+        }
+    }
+
     /**
      * Cria um cenário de conflito: export deste dispositivo, alteração
      * local não sincronizada e uma geração mais nova publicada na nuvem

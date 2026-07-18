@@ -51,8 +51,16 @@ public class SnapshotExportService {
     /** Versão do formato/schema do snapshot publicada no manifest. */
     static final String SCHEMA_VERSION = "1";
 
+    /** Subpasta da nuvem com o histórico de gerações anteriores do snapshot. */
+    static final String HISTORY_SUBDIR = "history";
+
+    /** Quantas gerações anteriores manter em {@code history/}. */
+    static final int SNAPSHOT_HISTORY_RETENTION = 5;
+
     private static final String EXPORT_LOCK_FILENAME = "sync-export.lock";
     private static final DateTimeFormatter ARCHIVE_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+    private static final java.util.regex.Pattern HISTORY_GENERATION_PATTERN =
+            java.util.regex.Pattern.compile("boards-snapshot-g(\\d+)");
 
     private final JdbcTemplate jdbcTemplate;
     private final AppMetadataConfig appMetadataConfig;
@@ -234,7 +242,7 @@ public class SnapshotExportService {
                             remote.map(SyncManifest::getGeneration).orElse(0L),
                             state.getLastSyncedGeneration()) + 1;
                     return publish(repository, syncDir, state, localSnapshot, contentSha256,
-                            deviceId, newGeneration,
+                            deviceId, newGeneration, remote,
                             "Dados enviados para a pasta de nuvem (geração " + newGeneration + ").");
                 }
                 default -> throw new IllegalStateException("Status inesperado: " + status);
@@ -270,7 +278,7 @@ public class SnapshotExportService {
                             + archivedAs + " (nada foi apagado)."
                     : "Dados deste computador enviados para a nuvem.";
             return publish(repository, syncDir, state, localSnapshot, contentSha256,
-                    deviceId, newGeneration, message);
+                    deviceId, newGeneration, remote, message);
         } finally {
             Files.deleteIfExists(localSnapshot);
         }
@@ -303,10 +311,16 @@ public class SnapshotExportService {
 
     /**
      * Publica o snapshot + manifest na nuvem e atualiza o estado local.
+     *
+     * <p>Antes de sobrescrever, a geração anterior do snapshot é movida para
+     * {@code history/} (retenção de {@value SNAPSHOT_HISTORY_RETENTION}
+     * gerações) — proteção extra contra um push equivocado.</p>
      */
     private SyncResult publish(SyncStateRepository repository, Path syncDir, SyncState state,
                                Path localSnapshot, String contentSha256, String deviceId,
-                               long newGeneration, String successMessage) throws IOException {
+                               long newGeneration, Optional<SyncManifest> previousManifest,
+                               String successMessage) throws IOException {
+        archivePreviousSnapshotToHistory(syncDir, previousManifest);
         publishSnapshot(localSnapshot, syncDir);
         SyncManifest manifest = SyncManifest.builder()
                 .deviceId(deviceId)
@@ -328,6 +342,63 @@ public class SnapshotExportService {
 
         log.info("Snapshot exportado para {} (geração {})", syncDir, newGeneration);
         return new SyncResult(SyncResult.Status.EXPORTED, successMessage);
+    }
+
+    /**
+     * Move a geração anterior do snapshot para {@code history/} antes de
+     * publicar a nova, mantendo as {@value SNAPSHOT_HISTORY_RETENTION}
+     * mais recentes.
+     *
+     * <p>Se o snapshot atual já foi movido (ex.: arquivado como
+     * {@code conflito-*.sql.gz} pela resolução de conflito), não faz nada.
+     * A janela entre este move e o {@code ATOMIC_MOVE} da nova geração é
+     * segura para importadores: manifest sem snapshot correspondente
+     * resulta em abort por hash, nunca em import parcial.</p>
+     */
+    private void archivePreviousSnapshotToHistory(Path syncDir, Optional<SyncManifest> previousManifest)
+            throws IOException {
+        Path current = syncDir.resolve(SyncStateRepository.SNAPSHOT_FILENAME);
+        if (!Files.exists(current)) {
+            return;
+        }
+        Path historyDir = syncDir.resolve(HISTORY_SUBDIR);
+        Files.createDirectories(historyDir);
+        String label = "g" + previousManifest.map(SyncManifest::getGeneration).orElse(0L);
+        Path target = historyDir.resolve("boards-snapshot-" + label + ".sql.gz");
+        if (Files.exists(target)) {
+            target = historyDir.resolve("boards-snapshot-" + label + "-"
+                    + UUID.randomUUID().toString().substring(0, 8) + ".sql.gz");
+        }
+        Files.move(current, target);
+        log.info("Geração anterior do snapshot movida para o histórico: {}", target);
+        cleanupHistory(historyDir);
+    }
+
+    /**
+     * Remove entradas antigas do histórico, mantendo as
+     * {@value SNAPSHOT_HISTORY_RETENTION} gerações mais recentes.
+     */
+    private void cleanupHistory(Path historyDir) {
+        try (java.util.stream.Stream<Path> files = Files.list(historyDir)) {
+            java.util.List<Path> entries = files
+                    .filter(p -> p.getFileName().toString().startsWith("boards-snapshot-g"))
+                    .sorted(java.util.Comparator
+                            .comparingLong(SnapshotExportService::historyGeneration)
+                            .thenComparing(p -> p.getFileName().toString()))
+                    .toList();
+            for (int i = 0; i < entries.size() - SNAPSHOT_HISTORY_RETENTION; i++) {
+                Files.deleteIfExists(entries.get(i));
+                log.info("Entrada antiga do histórico removida: {}", entries.get(i));
+            }
+        } catch (IOException e) {
+            log.warn("Erro ao limpar o histórico de snapshots: {}", e.getMessage());
+        }
+    }
+
+    private static long historyGeneration(Path entry) {
+        java.util.regex.Matcher matcher =
+                HISTORY_GENERATION_PATTERN.matcher(entry.getFileName().toString());
+        return matcher.find() ? Long.parseLong(matcher.group(1)) : 0L;
     }
 
     /**
