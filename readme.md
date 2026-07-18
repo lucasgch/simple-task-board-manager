@@ -1,7 +1,7 @@
 # Simple Task Board Manager
 
 <p align="center">
-  <a href="https://github.com/lgjor/desafio-board-dio" target="_blank">
+  <a href="https://github.com/lucasgch/simple-task-board-manager" target="_blank">
     <img src=".github/preview.jpg" width="100%" alt="Simple Task Board Manager">
   </a>
 </p>
@@ -15,6 +15,7 @@ Desenvolvido para manter você focado no que realmente importa: **resolver suas 
   <a href="#diferencial">Diferencial</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#tecnologias">Tecnologias</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#funcionalidades">Funcionalidades</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#sincronizacao">Sincronização</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#arquitetura">Arquitetura</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#testes">Testes</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="#changelog">Changelog</a>
@@ -38,14 +39,14 @@ Enquanto outras ferramentas de gerenciamento de tarefas oferecem inúmeras funci
 
 Este projeto foi desenvolvido com tecnologias modernas e estáveis:
 
-- **☕ Java 21** - Linguagem principal com recursos modernos
-- **🍃 Spring Boot 3.2.5** - Framework para injeção de dependências e configuração
-- **💾 H2 Database 2.3.232** - Banco de dados em memória para persistência local
-- **🖥️ JavaFX 21.0.4** - Interface gráfica moderna e responsiva
-- **🔧 Gradle 8.14.3** - Sistema de build e gerenciamento de dependências
+- **☕ Java 25** - Linguagem principal com recursos modernos
+- **🍃 Spring Boot 3.5.2** - Framework para injeção de dependências e configuração
+- **💾 H2 Database 2.3.232** - Banco de dados local em arquivo (`~/myboards`)
+- **🖥️ JavaFX 25.0.3 + CalendarFX** - Interface gráfica moderna, com calendário integrado
+- **🔧 Gradle 9.6.0** - Sistema de build e gerenciamento de dependências
 - **📊 Micrometer 1.15.2** - Observabilidade e métricas
 - **🧪 JUnit 5 + Mockito** - Testes unitários e de integração
-- **🔌 Google Tasks API** - Integração com Google Tasks (em desenvolvimento)
+- **🔌 Google Tasks API** - Integração com Google Tasks
 
 ## <div id="funcionalidades">✨ Funcionalidades</div>
 
@@ -62,10 +63,43 @@ Este projeto foi desenvolvido com tecnologias modernas e estáveis:
 - **📱 Responsivo**: Interface adaptável a diferentes tamanhos de tela
 
 ### Recursos Avançados
-- **🔍 Busca e Filtros**: Encontre rapidamente suas tarefas
-- **📅 Datas e Prazos**: Acompanhe prazos e datas de criação/conclusão
-- **🔄 Sincronização**: Integração com Google Tasks (em desenvolvimento)
-- **📊 Relatórios**: Visualize seu progresso e produtividade
+- **🔍 Busca e Filtros**: Filtre boards por grupo e por status
+- **📅 Datas e Prazos**: Agendamento, vencimento e calendário integrado
+- **🗂️ Grupos e Tipos de Card**: Organize boards em grupos e personalize tipos de card com unidades de progresso próprias
+- **🔌 Google Tasks**: Envie tarefas para o Google Tasks
+- **☁️ Sincronização entre Dispositivos**: Use seus boards em vários computadores via pasta de nuvem ([detalhes](#sincronizacao))
+
+## <div id="sincronizacao">☁️ Sincronização entre Dispositivos</div>
+
+Use o mesmo board em vários computadores através de uma pasta sincronizada por
+**Dropbox, Google Drive ou OneDrive** — sem depender das APIs dos provedores.
+
+### Como ativar
+
+1. Abra **Preferências** e habilite a sincronização;
+2. Escolha uma pasta sincronizada pelo seu provedor de nuvem (em modo espelho /
+   "sempre manter neste dispositivo");
+3. Escolha o modo: **Manual** (botão ☁ Sincronizar na barra de ferramentas) ou
+   **Automático ao abrir e fechar**.
+
+Os dados são publicados como snapshot na subpasta `SimpleTaskBoard/` da pasta
+escolhida. Ao abrir o aplicativo, dados mais novos da nuvem são importados
+automaticamente — com backup local prévio.
+
+### Segurança dos seus dados
+
+- **O banco em uso nunca fica na pasta de nuvem**: o que é sincronizado é um
+  snapshot consistente, validado por hash SHA-256 contra downloads parciais;
+- **Conflitos nunca são resolvidos silenciosamente**: se dois computadores
+  alteraram os dados ao mesmo tempo, um diálogo oferece três opções seguras —
+  manter os dados do computador (a versão da nuvem é arquivada), usar os dados
+  da nuvem (com backup local) ou decidir depois;
+- **Backups automáticos**: backup físico do banco antes de cada importação e
+  histórico das últimas gerações de snapshot na nuvem;
+- **Aviso em tempo real**: se outro computador enviar dados enquanto o app está
+  aberto, você é avisado de que a importação ocorre na próxima abertura.
+
+**📖 [Arquitetura da sincronização](docs/arquitetura/PLANO_SINCRONIZACAO_NUVEM.md)**
 
 ## <div id="arquitetura">🏗️ Arquitetura</div>
 
@@ -92,6 +126,12 @@ O projeto evoluiu de uma arquitetura simples para uma solução robusta e escal�
 - Gradle atualizado para versão 9.6.0.
 - Atualizada a versão do shadow e do lombok.
 
+#### **Fase 5: Sincronização entre Dispositivos**
+- **Snapshots consistentes**: export online-safe via `SCRIPT TO` do H2 — o banco em uso nunca é copiado
+- **Detecção de conflitos sem timestamps**: contador de geração monotônico + hashes SHA-256, imune a diferenças de relógio entre máquinas
+- **Escrita atômica na nuvem**: arquivo temporário + `ATOMIC_MOVE`, o cliente de nuvem nunca vê dados parciais
+- **Import seguro no startup**: único momento com o banco fechado, com validação de hash e backup físico prévio
+
 ### Benefícios da Arquitetura Atual
 
 - **🔧 Manutenibilidade**: Código organizado e fácil de manter
@@ -112,6 +152,7 @@ Para garantir qualidade e estabilidade, o projeto conta com uma suíte abrangent
 - **Spring Context**: Testes que carregam o contexto completo
 - **Database Integration**: Validação da persistência com H2
 - **API Integration**: Testes de integração com Google Tasks API
+- **Sincronização**: Round-trip export → wipe → import com contagem de linhas em todas as tabelas, conflitos, resoluções e restore entre versões de schema
 
 ### **Cobertura de Testes**
 - **JUnit 5**: Framework moderno de testes
@@ -120,7 +161,7 @@ Para garantir qualidade e estabilidade, o projeto conta com uma suíte abrangent
 
 ## 🚀 Como Usar
 
-1. **Download**: Baixe o instalador
+1. **Download**: Baixe o instalador na [página de releases](https://github.com/lucasgch/simple-task-board-manager/releases)
 2. **Instale**: Execute o instalador e siga as instruções
 3. **Execute**: Abra o aplicativo e comece a usar imediatamente
 4. **Produza**: Foque nas suas tarefas, não na ferramenta
@@ -130,14 +171,14 @@ Para garantir qualidade e estabilidade, o projeto conta com uma suíte abrangent
 O sistema garante que seus dados sejam preservados durante atualizações:
 
 ### **Backup Automático**
-- Scripts de backup para Linux/Mac e Windows
-- Backups salvos em `~/myboards/backups/`
-- Metadados incluídos em cada backup
+- Backup completo e transacionalmente consistente via `SCRIPT TO` do H2 (`.sql.gz`)
+- Backup físico automático do banco antes de cada importação de sincronização
+- Backups salvos em `~/myboards/backups/`, com política de retenção
+- Scripts manuais de backup para Linux/Mac e Windows
 
 ### **Migrações Automáticas**
-- Liquibase gerencia migrações de banco automaticamente
-- Dados existentes são preservados durante atualizações
-- Verificação de integridade automática
+- Migrações idempotentes executadas no início da aplicação preservam os dados existentes durante atualizações
+- Verificação de integridade automática na inicialização
 
 ### **Processo de Atualização Segura**
 ```bash
@@ -155,23 +196,35 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 
 ## 📦 Instalação
 
-### Windows
+### Gerar instaladores
 ```bash
-# Execute o instalador gerado
+# Windows
 ./gradlew jpackage
+
+# Linux
+./gradlew jpackageLinux      # AppImage
+./gradlew jpackageLinuxDeb   # pacote .deb
 ```
 
 ### Desenvolvimento
 ```bash
 # Clone o repositório
-git clone https://github.com/lgjor/simple-task-board-manager.git
+git clone https://github.com/lucasgch/simple-task-board-manager.git
 
 # Compile e execute
 ./gradlew bootRun
-java -jar build/libs/board-1.4.1-app.jar
 ```
 
 ## <div id="changelog">📋 Changelog</div>
+
+### [Não lançado]
+
+#### ☁️ Sincronização entre Dispositivos via Pasta de Nuvem
+- **Snapshots na nuvem**: export/import do banco via pasta sincronizada por Dropbox, Google Drive ou OneDrive, sem APIs dos provedores
+- **Modo manual ou automático**: botão ☁ Sincronizar na barra de ferramentas, ou export ao fechar e import ao abrir
+- **Resolução de conflitos**: diálogo com três opções seguras — nada é apagado (versão preterida arquivada na nuvem ou em backup local)
+- **Proteções**: validação por hash SHA-256 contra downloads parciais, backup físico antes de cada import, histórico de gerações na nuvem e detecção de cópias em conflito criadas pelos provedores
+- **Aviso em tempo real**: notificação quando outro computador envia dados enquanto o app está aberto
 
 ### [v1.1.0] - 2025-01-08
 
