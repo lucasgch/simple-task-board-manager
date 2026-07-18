@@ -52,3 +52,10 @@ bin/
 /tokens/
 tokens/
 /src/main/resources/auth/
+
+### Claude Code ###
+.claude/
+.mcp.json
+
+### Arquivos locais avulsos ###
+*.zip
