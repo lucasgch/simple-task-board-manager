@@ -23,7 +23,7 @@ Desenvolvido para manter você focado no que realmente importa: **resolver suas 
 
 ## <div id="diferencial">🎯 Nosso Diferencial: Simplicidade que Foca na Produtividade</div>
 
-Enquanto outras ferramentas de gerenciamento de tarefas oferecem inúmeras funcionalidades e configurações complexas, o **Simple Task Board Manager** foi desenvolvido com um propósito claro: **manter você focado na resolução de suas tarefas, não no uso da ferramenta**.
+Enquanto outras ferramentas de gerenciamento de tarefas oferecem inúmeras funcionalidades e configurações complexas, o **Simple Task Board Manager** foi desenvolvido com um propósito claro: **manter o foco na resolução de tarefas, não no uso da ferramenta**.
 
 ### Por que escolher nossa solução?
 
