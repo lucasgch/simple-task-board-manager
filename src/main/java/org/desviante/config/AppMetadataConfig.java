@@ -48,7 +48,7 @@ public class AppMetadataConfig {
     private static final String METADATA_FILENAME = "app-metadata.json";
     private static final String DEFAULT_METADATA_FILENAME = "default-app-metadata.json";
     
-    @Value("${app.metadata.directory:${user.home}/myboards/config}")
+    @Value("${app.metadata.directory:${app.data.dir:${user.home}/myboards}/config}")
     private String metadataDirectoryPath;
     
     @Autowired
@@ -88,7 +88,7 @@ public class AppMetadataConfig {
             // ⭐ CORREÇÃO: Verificar se metadataDirectoryPath foi injetado
             if (metadataDirectoryPath == null || metadataDirectoryPath.isEmpty()) {
                 log.warn("⚠️ metadataDirectoryPath não foi injetado, usando valor padrão");
-                metadataDirectoryPath = System.getProperty("user.home") + "/myboards/config";
+                metadataDirectoryPath = org.desviante.util.DataDirectoryPreflight.dataDir() + "/config";
             }
             
             log.info("🔄 Diretório de configuração final: {}", metadataDirectoryPath);
@@ -158,8 +158,8 @@ public class AppMetadataConfig {
                 .defaultBoardGroupId(null) // Sem grupo padrão - usuário deve configurar explicitamente
                 .defaultStatusFilter("Não concluídos") // Filtro padrão: mostrar apenas boards não concluídos
                 .installationDirectory(System.getProperty("user.dir"))
-                .userDataDirectory(System.getProperty("user.home") + "/myboards")
-                .logDirectory(System.getProperty("user.home") + "/myboards/logs")
+                .userDataDirectory(org.desviante.util.DataDirectoryPreflight.dataDir())
+                .logDirectory(org.desviante.util.DataDirectoryPreflight.dataDir() + "/logs")
                 .defaultLogLevel("INFO")
                 .maxLogFileSizeMB(10)
                 .maxLogFiles(5)
@@ -169,7 +169,7 @@ public class AppMetadataConfig {
                 .databaseTimeoutSeconds(30)
                 .autoBackupDatabase(true)
                 .autoBackupIntervalHours(24)
-                .autoBackupDirectory(System.getProperty("user.home") + "/myboards/backups")
+                .autoBackupDirectory(org.desviante.util.DataDirectoryPreflight.dataDir() + "/backups")
                 .syncEnabled(false) // Sincronização entre dispositivos desabilitada por padrão
                 .syncFolderPath(null) // Usuário escolhe a pasta de nuvem ao habilitar
                 .syncDeviceId(null) // UUID gerado na primeira ativação da sincronização

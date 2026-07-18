@@ -1660,7 +1660,7 @@ public class CardViewController {
      * @param message mensagem a ser logada
      */
     private void logToFile(String message) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(System.getProperty("user.home") + "/myboards/card_repository_debug.log", true))) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(org.desviante.util.DataDirectoryPreflight.dataDir() + "/card_repository_debug.log", true))) {
             writer.println("[" + LocalDateTime.now() + "] " + message);
             writer.flush();
         } catch (IOException e) {

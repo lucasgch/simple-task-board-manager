@@ -37,7 +37,7 @@ import java.util.List;
 public class DatabaseBackupService {
 
     private final JdbcTemplate jdbcTemplate;
-    private static final String BACKUP_DIR = System.getProperty("user.home") + "/myboards/backups";
+    private static final String BACKUP_DIR = org.desviante.util.DataDirectoryPreflight.dataDir() + "/backups";
 
     /**
      * Cria um backup completo do banco de dados via {@code SCRIPT TO}.

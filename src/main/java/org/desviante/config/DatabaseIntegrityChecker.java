@@ -33,7 +33,7 @@ public class DatabaseIntegrityChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseIntegrityChecker.class);
     
-    private static final String DB_FILE_PATH = System.getProperty("user.home") + "/myboards/board_h2_db";
+    private static final String DB_FILE_PATH = org.desviante.util.DataDirectoryPreflight.dataDir() + "/board_h2_db";
     
     @Autowired
     private DataSource dataSource;

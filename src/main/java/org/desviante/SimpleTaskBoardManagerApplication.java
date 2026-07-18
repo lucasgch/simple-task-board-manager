@@ -90,6 +90,12 @@ public class SimpleTaskBoardManagerApplication {
      * @see ConfigurableApplicationContext
      */
     public static void main(String[] args) {
+        // Pre-flight: garante um diretório de dados gravável ANTES de o Spring
+        // subir e abrir o banco H2. Sem isso, uma pasta inacessível derruba o
+        // contexto antes do JavaFX e o app "não abre" sem mensagem nenhuma.
+        // Se necessário, exibe diálogo para o usuário escolher outra pasta.
+        org.desviante.util.DataDirectoryPreflight.ensureWritableDataDirectory();
+
         // A mágica acontece aqui:
         // 1. O SpringApplication.run() é chamado de forma NÃO-BLOQUEANTE.
         // 2. Ele retorna o contexto da aplicação totalmente inicializado.

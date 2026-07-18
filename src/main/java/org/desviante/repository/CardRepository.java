@@ -46,7 +46,7 @@ public class CardRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
     private final JdbcTemplate simpleJdbcTemplate;
-    private static final String LOG_FILE = System.getProperty("user.home") + "/myboards/card_repository_debug.log";
+    private static final String LOG_FILE = org.desviante.util.DataDirectoryPreflight.dataDir() + "/card_repository_debug.log";
 
     /**
      * Construtor que inicializa os templates JDBC necessários.
