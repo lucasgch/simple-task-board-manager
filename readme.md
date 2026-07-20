@@ -197,14 +197,20 @@ O sistema garante que seus dados sejam preservados durante atualizações:
 ## 📦 Instalação
 
 ### Gerar instaladores
+
+O `jpackage` não faz cross-compile: cada comando precisa ser executado **na própria plataforma** de destino, gerando o pacote em `build/dist/`.
+
 ```bash
-# Windows
+# Windows (gera .exe) — requer WiX Toolset instalado
 ./gradlew jpackage
 
 # Linux
-./gradlew jpackageLinux      # AppImage
-./gradlew jpackageLinuxDeb   # pacote .deb
+./gradlew jpackageLinux      # app-image (pasta autocontida, sem instalador)
+./gradlew jpackageLinuxDeb   # pacote .deb — requer dpkg-deb (Debian/Ubuntu)
+./gradlew jpackageLinuxRpm   # pacote .rpm — requer rpmbuild (Fedora/RHEL, ou pacote rpm no Debian/Ubuntu)
 ```
+
+> macOS ainda não possui task de empacotamento configurada no `build.gradle.kts`.
 
 ### Desenvolvimento
 ```bash
