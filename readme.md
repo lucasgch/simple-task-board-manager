@@ -223,7 +223,7 @@ git clone https://github.com/lucasgch/simple-task-board-manager.git
 
 ## <div id="changelog">📋 Changelog</div>
 
-### [Não lançado]
+### [v1.5] - 2026-07-20
 
 #### ☁️ Sincronização entre Dispositivos via Pasta de Nuvem
 - **Snapshots na nuvem**: export/import do banco via pasta sincronizada por Dropbox, Google Drive ou OneDrive, sem APIs dos provedores
