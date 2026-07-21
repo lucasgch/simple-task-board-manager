@@ -91,6 +91,23 @@
 }
 .filter-chip .label-key { -fx-text-fill: -text-faint; -fx-font-size: 12px; }
 
+/* grupos de ação da toolbar ("BOARD" / "GRUPO") — mesma moldura do
+   filter-chip, com um rótulo pequeno acima identificando o grupo, para que
+   as ações de Board e de Grupo se leiam como unidades distintas em vez de
+   se misturarem na fileira de botões soltos. */
+.button-group {
+    -fx-background-color: -app-bg;
+    -fx-border-color: -border;
+    -fx-border-radius: 10; -fx-background-radius: 10;
+    -fx-padding: 3 8 5 8;
+    -fx-spacing: 2;
+    -fx-alignment: CENTER;
+}
+.button-group .group-label {
+    -fx-text-fill: -text-faint; -fx-font-size: 10px; -fx-font-weight: bold;
+}
+.button-group-row { -fx-spacing: 5; }
+
 /* ---- Painel "Meus Boards" (tabela) ---- */
 .panel { -fx-background-color: -panel; }
 .panel-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -text; }

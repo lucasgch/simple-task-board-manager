@@ -18,12 +18,29 @@
         <!-- Seção <top> com a barra de ferramentas e os botões -->
         <HBox styleClass="topbar" alignment="CENTER_LEFT">
             <children>
-                <Button fx:id="createBoardButton" onAction="#handleCreateBoard" text="Criar Board" styleClass="btn-primary" />
-                <Button fx:id="editBoardButton" onAction="#handleEditBoard" text="Editar Board" styleClass="btn-outline" />
-                <Button fx:id="deleteBoardButton" onAction="#handleDeleteBoard" text="Excluir Board" styleClass="btn-outline" />
-                <Separator orientation="VERTICAL" />
-                <Button fx:id="createGroupButton" onAction="#handleCreateGroup" text="Criar Grupo" styleClass="btn-outline" />
-                <Button fx:id="editGroupButton" onAction="#handleEditGroup" text="Editar Grupo" styleClass="btn-outline" />
+                <VBox styleClass="button-group" alignment="CENTER">
+                    <children>
+                        <Label text="BOARD" styleClass="group-label" />
+                        <HBox styleClass="button-group-row">
+                            <children>
+                                <Button fx:id="createBoardButton" onAction="#handleCreateBoard" text="Criar" styleClass="btn-primary" />
+                                <Button fx:id="editBoardButton" onAction="#handleEditBoard" text="Editar" styleClass="btn-outline" />
+                                <Button fx:id="deleteBoardButton" onAction="#handleDeleteBoard" text="Excluir" styleClass="btn-outline" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+                <VBox styleClass="button-group" alignment="CENTER">
+                    <children>
+                        <Label text="GRUPO" styleClass="group-label" />
+                        <HBox styleClass="button-group-row">
+                            <children>
+                                <Button fx:id="createGroupButton" onAction="#handleCreateGroup" text="Criar" styleClass="btn-outline" />
+                                <Button fx:id="editGroupButton" onAction="#handleEditGroup" text="Editar" styleClass="btn-outline" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
                 <Separator orientation="VERTICAL" />
                 <HBox styleClass="filter-chip">
                     <children>
