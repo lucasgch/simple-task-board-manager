@@ -50,6 +50,17 @@ java {
     }
 }
 
+// Resolve o executável "jpackage" do MESMO toolchain (Java 25) usado para compilar o
+// projeto. Sem isso, as tasks jpackage* chamam o "jpackage" do PATH do sistema, que
+// pode apontar para outra versão de JDK e embutir um runtime incompatível com o
+// bytecode compilado (UnsupportedClassVersionError ao rodar o app empacotado).
+val javaToolchainService = extensions.getByType<JavaToolchainService>()
+val jpackageExecutable: File = javaToolchainService.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(25))
+}.get().executablePath.asFile.parentFile.resolve(
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows) "jpackage.exe" else "jpackage"
+)
+
 // A exclusão do commons-logging continua sendo uma boa prática.
 configurations.all {
     exclude(group = "org.springframework.boot", module = "spring-boot-starter-logging")
@@ -216,7 +227,7 @@ tasks.register<Exec>("jpackage") {
     val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input")
 
     commandLine(
-        "jpackage",
+        jpackageExecutable.absolutePath,
         "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
@@ -267,7 +278,7 @@ tasks.register<Exec>("jpackageLinux") {
     val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-linux")
 
     commandLine(
-        "jpackage",
+        jpackageExecutable.absolutePath,
         "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
@@ -310,7 +321,7 @@ tasks.register<Exec>("jpackageLinuxDeb") {
     val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-deb")
 
     commandLine(
-        "jpackage",
+        jpackageExecutable.absolutePath,
         "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
@@ -325,8 +336,7 @@ tasks.register<Exec>("jpackageLinuxDeb") {
         "--linux-menu-group", "Office",
         "--linux-shortcut",
         "--linux-deb-maintainer", "lucas@desviante.org",
-        "--linux-package-name", "simple-task-board-manager",
-        "--linux-package-deps", "openjfx"
+        "--linux-package-name", "simple-task-board-manager"
     )
     
     doFirst {
@@ -359,7 +369,7 @@ tasks.register<Exec>("jpackageLinuxRpm") {
     val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-rpm")
 
     commandLine(
-        "jpackage",
+        jpackageExecutable.absolutePath,
         "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
