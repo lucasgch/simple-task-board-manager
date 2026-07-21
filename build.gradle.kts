@@ -255,6 +255,16 @@ tasks.register<Exec>("jpackage") {
             throw GradleException("Ícone não encontrado: ${iconFile.absolutePath}")
         }
 
+        // O jpackage grava o .exe de saída como somente-leitura. Ao rodar a task
+        // de novo para a mesma versão, ele tenta sobrescrever esse arquivo e falha
+        // com AccessDeniedException. Remove o instalador anterior (limpando o
+        // atributo de somente-leitura antes) para permitir builds repetidos.
+        val outputExe = file("${layout.buildDirectory.get()}/dist/$appName-$appVersion.exe")
+        if (outputExe.exists()) {
+            outputExe.setWritable(true)
+            outputExe.delete()
+        }
+
         // Recria o diretório de input do jpackage contendo APENAS o jar atual.
         // Evita que jars de builds anteriores (ex: board-x-app.jar, board-x-plain.jar
         // deixados em build/libs) sejam incluídos no classpath do instalador,
