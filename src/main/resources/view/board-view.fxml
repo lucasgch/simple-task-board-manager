@@ -18,7 +18,6 @@
         <!-- Seção <top> com a barra de ferramentas e os botões -->
         <HBox styleClass="topbar" alignment="CENTER_LEFT">
             <children>
-                <Label text="T" styleClass="brand-badge" />
                 <Button fx:id="createBoardButton" onAction="#handleCreateBoard" text="Criar Board" styleClass="btn-primary" />
                 <Button fx:id="editBoardButton" onAction="#handleEditBoard" text="Editar Board" styleClass="btn-outline" />
                 <Button fx:id="deleteBoardButton" onAction="#handleDeleteBoard" text="Excluir Board" styleClass="btn-outline" />

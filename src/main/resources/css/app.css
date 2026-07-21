@@ -49,14 +49,6 @@
     -fx-padding: 12 18;
     -fx-spacing: 14;
 }
-.brand-badge {
-    -fx-background-color: -accent;
-    -fx-background-radius: 8;
-    -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30;
-    -fx-alignment: CENTER;
-    -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
-}
-
 /* ---- Botões ---- */
 .btn-primary {
     -fx-background-color: -accent;
