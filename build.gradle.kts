@@ -129,6 +129,19 @@ tasks.shadowJar {
     manifest {
         attributes["Main-Class"] = "org.desviante.SimpleTaskBoardManagerApplication"
     }
+
+    // mergeServiceFiles() só mescla META-INF/services/*. Várias dependências do
+    // Spring (spring-boot, spring-boot-autoconfigure, etc.) trazem seu próprio
+    // META-INF/spring.factories no MESMO caminho; sem merge explícito, o Shadow
+    // mantém só um deles e descarta os demais silenciosamente. Isso já causou a
+    // ausência das entradas de PropertySourceLoader (Properties/Yaml) do
+    // spring-boot core, fazendo o Spring Boot nunca carregar o
+    // application.properties do classpath — o app subia sem
+    // "spring.datasource.url" nenhum, com "Could not resolve placeholder
+    // 'spring.datasource.url'" na inicialização do DataConfig.
+    append("META-INF/spring.factories")
+    append("META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports")
+    append("META-INF/spring-autoconfigure-metadata.properties")
 }
 
 // Configuração do Spring Boot
@@ -179,14 +192,15 @@ tasks.withType<Test> {
 // Configuração para jpackage (instalador Windows)
 tasks.register<Exec>("jpackage") {
     dependsOn("shadowJar")
-    
+
     val shadowJar = tasks.shadowJar.get().archiveFile.get().asFile
     val appName = "SimpleTaskBoardManager"
     val iconFile = file("src/main/resources/icon.ico")
-    
+    val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input")
+
     commandLine(
         "jpackage",
-        "--input", shadowJar.parent,
+        "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
         "--main-class", "org.desviante.SimpleTaskBoardManagerApplication",
@@ -207,10 +221,21 @@ tasks.register<Exec>("jpackage") {
     doFirst {
         // Cria o diretório de destino se não existir
         file("${layout.buildDirectory.get()}/dist").mkdirs()
-        
+
         // Verifica se o ícone existe
         if (!iconFile.exists()) {
             throw GradleException("Ícone não encontrado: ${iconFile.absolutePath}")
+        }
+
+        // Recria o diretório de input do jpackage contendo APENAS o jar atual.
+        // Evita que jars de builds anteriores (ex: board-x-app.jar, board-x-plain.jar
+        // deixados em build/libs) sejam incluídos no classpath do instalador,
+        // o que causa "Failed to launch JVM" por classpath inconsistente.
+        delete(jpackageInputDir)
+        jpackageInputDir.mkdirs()
+        copy {
+            from(shadowJar)
+            into(jpackageInputDir)
         }
     }
 }
@@ -218,14 +243,15 @@ tasks.register<Exec>("jpackage") {
 // Configuração para jpackage Linux (AppImage)
 tasks.register<Exec>("jpackageLinux") {
     dependsOn("shadowJar")
-    
+
     val shadowJar = tasks.shadowJar.get().archiveFile.get().asFile
     val appName = "SimpleTaskBoardManager"
     val iconFile = file("src/main/resources/icon.png")
-    
+    val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-linux")
+
     commandLine(
         "jpackage",
-        "--input", shadowJar.parent,
+        "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
         "--main-class", "org.desviante.SimpleTaskBoardManagerApplication",
@@ -240,10 +266,19 @@ tasks.register<Exec>("jpackageLinux") {
     doFirst {
         // Cria o diretório de destino se não existir
         file("${layout.buildDirectory.get()}/dist").mkdirs()
-        
+
         // Verifica se o ícone existe
         if (!iconFile.exists()) {
             logger.warn("Ícone PNG não encontrado, usando ícone padrão")
+        }
+
+        // Recria o diretório de input do jpackage contendo APENAS o jar atual
+        // (veja o comentário equivalente na task "jpackage" acima).
+        delete(jpackageInputDir)
+        jpackageInputDir.mkdirs()
+        copy {
+            from(shadowJar)
+            into(jpackageInputDir)
         }
     }
 }
@@ -251,14 +286,15 @@ tasks.register<Exec>("jpackageLinux") {
 // Configuração para jpackage Linux (DEB package)
 tasks.register<Exec>("jpackageLinuxDeb") {
     dependsOn("shadowJar")
-    
+
     val shadowJar = tasks.shadowJar.get().archiveFile.get().asFile
     val appName = "simple-task-board-manager"
     val iconFile = file("src/main/resources/icon.png")
-    
+    val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-deb")
+
     commandLine(
         "jpackage",
-        "--input", shadowJar.parent,
+        "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
         "--main-class", "org.desviante.SimpleTaskBoardManagerApplication",
@@ -279,10 +315,19 @@ tasks.register<Exec>("jpackageLinuxDeb") {
     doFirst {
         // Cria o diretório de destino se não existir
         file("${layout.buildDirectory.get()}/dist").mkdirs()
-        
+
         // Verifica se o ícone existe
         if (!iconFile.exists()) {
             logger.warn("Ícone PNG não encontrado, usando ícone padrão")
+        }
+
+        // Recria o diretório de input do jpackage contendo APENAS o jar atual
+        // (veja o comentário equivalente na task "jpackage" acima).
+        delete(jpackageInputDir)
+        jpackageInputDir.mkdirs()
+        copy {
+            from(shadowJar)
+            into(jpackageInputDir)
         }
     }
 }
@@ -290,14 +335,15 @@ tasks.register<Exec>("jpackageLinuxDeb") {
 // Configuração para jpackage Linux (RPM package)
 tasks.register<Exec>("jpackageLinuxRpm") {
     dependsOn("shadowJar")
-    
+
     val shadowJar = tasks.shadowJar.get().archiveFile.get().asFile
     val appName = "simple-task-board-manager"
     val iconFile = file("src/main/resources/icon.png")
-    
+    val jpackageInputDir = file("${layout.buildDirectory.get()}/jpackage-input-rpm")
+
     commandLine(
         "jpackage",
-        "--input", shadowJar.parent,
+        "--input", jpackageInputDir.absolutePath,
         "--name", appName,
         "--main-jar", shadowJar.name,
         "--main-class", "org.desviante.SimpleTaskBoardManagerApplication",
@@ -316,10 +362,19 @@ tasks.register<Exec>("jpackageLinuxRpm") {
     doFirst {
         // Cria o diretório de destino se não existir
         file("${layout.buildDirectory.get()}/dist").mkdirs()
-        
+
         // Verifica se o ícone existe
         if (!iconFile.exists()) {
             logger.warn("Ícone PNG não encontrado, usando ícone padrão")
+        }
+
+        // Recria o diretório de input do jpackage contendo APENAS o jar atual
+        // (veja o comentário equivalente na task "jpackage" acima).
+        delete(jpackageInputDir)
+        jpackageInputDir.mkdirs()
+        copy {
+            from(shadowJar)
+            into(jpackageInputDir)
         }
     }
 }
