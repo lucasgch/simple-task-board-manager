@@ -3,6 +3,12 @@ import java.io.File
 // Constante centralizada para a versão da aplicação
 val appVersion = "1.5"
 
+// Versões centralizadas para reuso nas dependências e no build-info
+// (exibidas dinamicamente na tela "Sobre" — não há API em runtime para lê-las
+// sem adicionar essas libs ao classpath de compilação).
+val javafxVersion = "25.0.3"
+val h2Version = "2.3.232"
+
 val platform = when {
     org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
     org.gradle.internal.os.OperatingSystem.current().isLinux -> "linux"
@@ -56,7 +62,6 @@ configurations.all {
 
 dependencies {
 
-    val javafxVersion = "25.0.3"
     val javafxOsClassifier = when {
         org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
         org.gradle.internal.os.OperatingSystem.current().isLinux -> "linux"
@@ -90,7 +95,7 @@ dependencies {
     // Liquibase para migrações de banco
     implementation("org.liquibase:liquibase-core:4.24.0")
     implementation("org.slf4j:slf4j-simple:2.0.13")
-    runtimeOnly("com.h2database:h2:2.3.232")
+    runtimeOnly("com.h2database:h2:$h2Version")
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
     implementation("com.google.apis:google-api-services-tasks:v1-rev20250518-2.0.0")    
@@ -146,7 +151,19 @@ tasks.shadowJar {
 
 // Configuração do Spring Boot
 springBoot {
-    buildInfo()
+    buildInfo {
+        // Java e Spring Boot já expõem sua versão em runtime (System.getProperty,
+        // SpringBootVersion.getVersion()). JavaFX e H2 (runtimeOnly, fora do classpath
+        // de compilação) e Gradle não têm API equivalente aqui, então gravamos os
+        // valores conhecidos em build time para a tela "Sobre" ler via BuildProperties.
+        properties {
+            additional = mapOf(
+                "javafx.version" to javafxVersion,
+                "gradle.version" to gradle.gradleVersion,
+                "h2.version" to h2Version
+            )
+        }
+    }
 }
 
 configurations.configureEach {

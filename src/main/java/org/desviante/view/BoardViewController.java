@@ -1474,6 +1474,13 @@ public class BoardViewController {
         try {
             // Carregar a tela About definitiva
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/about.fxml"));
+
+            // Configurar o controller usando o Spring (AboutController tem dependências injetadas)
+            org.desviante.view.AboutController controller =
+                org.desviante.SimpleTaskBoardManagerApplication.getSpringContext()
+                    .getBean(org.desviante.view.AboutController.class);
+            loader.setController(controller);
+
             Parent root = loader.load();
             
             // Criar uma nova janela

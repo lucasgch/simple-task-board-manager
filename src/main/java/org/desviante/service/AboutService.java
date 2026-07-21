@@ -67,6 +67,13 @@ public class AboutService {
             
             // Carrega o FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource(ABOUT_FXML_PATH));
+
+            // Configura o controller usando o Spring (AboutController tem dependências injetadas)
+            org.desviante.view.AboutController controller =
+                org.desviante.SimpleTaskBoardManagerApplication.getSpringContext()
+                    .getBean(org.desviante.view.AboutController.class);
+            loader.setController(controller);
+
             Parent root = loader.load();
             
             // Cria a cena

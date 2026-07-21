@@ -16,7 +16,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
 
-<VBox fx:id="aboutPane" spacing="15" styleClass="about-pane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.desviante.view.AboutController">
+<VBox fx:id="aboutPane" spacing="15" styleClass="about-pane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
     <padding>
         <Insets top="20.0" right="25.0" bottom="20.0" left="25.0" />
     </padding>
@@ -44,19 +44,19 @@
             <Label fx:id="developerLabel" text="Aú Desviante - Lucas Godoy" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="info-value" />
             
             <Label text="Linguagem:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="info-label" />
-            <Label text="Java 21" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="info-value" />
-            
+            <Label fx:id="javaVersionLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="info-value" />
+
             <Label text="Framework:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label" />
-            <Label text="Spring Boot 3.2.5" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" />
-            
+            <Label fx:id="springBootVersionLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-value" />
+
             <Label text="Interface:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label" />
-            <Label text="JavaFX 21.0.4" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value" />
-            
+            <Label fx:id="javafxVersionLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-value" />
+
             <Label text="Banco de Dados:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="info-label" />
-            <Label text="H2 Database 2.3.232" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="info-value" />
-            
+            <Label fx:id="h2VersionLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="info-value" />
+
             <Label text="Build System:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="info-label" />
-            <Label text="Gradle 8.14.3" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="info-value" />
+            <Label fx:id="gradleVersionLabel" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="info-value" />
         </GridPane>
     </VBox>
     

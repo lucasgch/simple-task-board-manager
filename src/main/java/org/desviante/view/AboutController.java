@@ -6,12 +6,15 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.Hyperlink;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert;
+import org.springframework.boot.SpringBootVersion;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.Desktop;
 import java.net.URI;
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Controlador para a tela "Sobre" da aplicação.
@@ -27,7 +30,7 @@ import java.io.IOException;
  *   <li>Controle da janela de informações</li>
  * </ul>
  * 
- * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lucasgch">GitHub</a>
+ * @author Aú Desviante - Lucas Godoy <a href="https://github.com/lucasgchis p1">GitHub</a>
  * @version 1.0
  * @since 1.0
  */
@@ -44,6 +47,23 @@ public class AboutController {
     @FXML private Hyperlink githubLink;
     @FXML private Hyperlink licenseLink;
     @FXML private Hyperlink changelogLink;
+    @FXML private Label javaVersionLabel;
+    @FXML private Label springBootVersionLabel;
+    @FXML private Label javafxVersionLabel;
+    @FXML private Label h2VersionLabel;
+    @FXML private Label gradleVersionLabel;
+
+    /**
+     * JavaFX, H2 e Gradle não expõem sua versão via API em runtime, então esse
+     * valor vem do build-info.properties gerado pelo Gradle (ver build.gradle.kts).
+     * O bean só existe após um build completo (ex.: pode faltar ao rodar direto
+     * pela IDE sem passar pelo Gradle), por isso é opcional.
+     */
+    private final BuildProperties buildProperties;
+
+    public AboutController(Optional<BuildProperties> buildProperties) {
+        this.buildProperties = buildProperties.orElse(null);
+    }
 
     /**
      * Inicializa o controller após o FXML ser carregado.
@@ -55,6 +75,7 @@ public class AboutController {
     @FXML
     public void initialize() {
         setupStaticTexts();
+        setupTechnicalInfo();
         setupAppDescription();
         setupLinks();
         log.debug("Tela About inicializada com sucesso");
@@ -82,6 +103,30 @@ public class AboutController {
             java.time.Year year = java.time.Year.now();
             copyrightLabel.setText("© " + year + " Aú Desviante. Licenciado sob GPL-3.0");
         }
+    }
+
+    /**
+     * Preenche as versões de Java, Spring Boot, JavaFX, H2 e Gradle sem
+     * hardcode: Java e Spring Boot lêem sua própria versão em runtime; as
+     * demais vêm do build-info.properties gerado pelo Gradle.
+     */
+    private void setupTechnicalInfo() {
+        setVersionLabel(javaVersionLabel, "Java", System.getProperty("java.version"));
+        setVersionLabel(springBootVersionLabel, "Spring Boot", SpringBootVersion.getVersion());
+        setVersionLabel(javafxVersionLabel, "JavaFX", buildProperty("javafx.version"));
+        setVersionLabel(h2VersionLabel, "H2 Database", buildProperty("h2.version"));
+        setVersionLabel(gradleVersionLabel, "Gradle", buildProperty("gradle.version"));
+    }
+
+    private String buildProperty(String key) {
+        return buildProperties == null ? null : buildProperties.get(key);
+    }
+
+    private void setVersionLabel(Label label, String name, String version) {
+        if (label == null) {
+            return;
+        }
+        label.setText(version == null || version.isBlank() ? name : name + " " + version);
     }
 
     /**
