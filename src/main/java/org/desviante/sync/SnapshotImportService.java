@@ -74,6 +74,7 @@ public class SnapshotImportService {
 
     private static volatile StartupImportResult lastStartupResult = StartupImportResult.DISABLED;
     private static volatile java.util.List<String> lastConflictedCopies = java.util.List.of();
+    private static volatile String lastStartupErrorDetail = null;
 
     private final Path dataDir;
     private final Path cloudFolder;
@@ -114,6 +115,7 @@ public class SnapshotImportService {
      * @return desfecho da verificação/import
      */
     public static StartupImportResult runStartupImportIfEnabled() {
+        lastStartupErrorDetail = null;
         try {
             Path dataDir = Paths.get(DataDirectoryPreflight.dataDir());
             AppMetadata metadata = readMetadata(dataDir);
@@ -140,6 +142,7 @@ public class SnapshotImportService {
 
         } catch (Exception e) {
             log.error("Falha inesperada na verificação de sincronização no startup", e);
+            lastStartupErrorDetail = describe(e);
             return recordResult(StartupImportResult.ERROR);
         }
     }
@@ -151,6 +154,17 @@ public class SnapshotImportService {
      */
     public static StartupImportResult getLastStartupResult() {
         return lastStartupResult;
+    }
+
+    /**
+     * Detalhe da falha registrada no último {@code ERROR}/{@code SKIPPED_DB_IN_USE}
+     * de startup (mensagem da exceção), para exibição na UI — sem isto, a causa
+     * real fica visível apenas no log, invisível numa build empacotada sem console.
+     *
+     * @return descrição da falha, ou {@code null} se o último resultado não falhou
+     */
+    public static String getLastStartupErrorDetail() {
+        return lastStartupErrorDetail;
     }
 
     /**
@@ -191,6 +205,7 @@ public class SnapshotImportService {
                 return importSnapshot(repository, syncDir, remote, state);
             } catch (IOException e) {
                 log.error("Falha ao restaurar snapshot da nuvem", e);
+                lastStartupErrorDetail = describe(e);
                 return StartupImportResult.ERROR;
             }
         }
@@ -203,15 +218,19 @@ public class SnapshotImportService {
             log.info("Resolução de conflito registrada: usar os dados da nuvem (geração {})",
                     remote.getGeneration());
             try (Connection probe = DriverManager.getConnection(jdbcUrl, dbUser, dbPassword)) {
-                // Sondagem apenas — fecha antes do import
+                // Sondagem apenas — SHUTDOWN força o fechamento completo do
+                // engine antes do import (ver shutdownEngine)
+                shutdownEngine(probe);
             } catch (SQLException e) {
                 log.warn("Banco local em uso por outro processo — import pulado ({})", e.getMessage());
+                lastStartupErrorDetail = describe(e);
                 return StartupImportResult.SKIPPED_DB_IN_USE;
             }
             try {
                 return importSnapshot(repository, syncDir, remote, state);
             } catch (IOException e) {
                 log.error("Falha ao importar snapshot da nuvem (resolução de conflito)", e);
+                lastStartupErrorDetail = describe(e);
                 return StartupImportResult.ERROR;
             }
         }
@@ -221,9 +240,11 @@ public class SnapshotImportService {
             dirty = isLocalDirty(state);
         } catch (SQLException e) {
             log.warn("Banco local em uso por outro processo — import pulado ({})", e.getMessage());
+            lastStartupErrorDetail = describe(e);
             return StartupImportResult.SKIPPED_DB_IN_USE;
         } catch (IOException e) {
             log.error("Falha ao verificar alterações locais — import pulado", e);
+            lastStartupErrorDetail = describe(e);
             return StartupImportResult.ERROR;
         }
 
@@ -256,6 +277,7 @@ public class SnapshotImportService {
             }
         } catch (IOException e) {
             log.error("Falha ao atualizar o estado de sincronização", e);
+            lastStartupErrorDetail = describe(e);
             return StartupImportResult.ERROR;
         }
     }
@@ -269,12 +291,17 @@ public class SnapshotImportService {
         Path snapshot = syncDir.resolve(SyncStateRepository.SNAPSHOT_FILENAME);
         if (!Files.exists(snapshot)) {
             log.warn("Manifest presente mas snapshot ausente em {} — propagação da nuvem incompleta", syncDir);
+            lastStartupErrorDetail = "Manifest presente mas o arquivo do snapshot ainda não chegou na pasta de nuvem "
+                    + "(" + snapshot + ").";
             return StartupImportResult.HASH_MISMATCH;
         }
         String fileSha = SyncHashes.sha256OfFile(snapshot);
         if (!fileSha.equals(remote.getSha256())) {
             log.warn("Hash do snapshot não confere com o manifest (download parcial ou placeholder "
                     + "online-only?). Esperado {}, obtido {}. Import abortado.", remote.getSha256(), fileSha);
+            lastStartupErrorDetail = "Hash do snapshot não confere com o manifest (esperado "
+                    + remote.getSha256() + ", obtido " + fileSha + ") — download parcial ou arquivo "
+                    + "online-only ainda não baixado pelo provedor de nuvem.";
             return StartupImportResult.HASH_MISMATCH;
         }
 
@@ -311,9 +338,23 @@ public class SnapshotImportService {
 
         } catch (Exception e) {
             log.error("Falha no import do snapshot — restaurando backup do banco local", e);
+            lastStartupErrorDetail = describe(e);
             restoreBackup(backup, dbFile);
             return StartupImportResult.ERROR;
         }
+    }
+
+    /**
+     * Descreve uma exceção de forma curta e legível para exibição na UI
+     * (classe + mensagem, incluindo a causa raiz quando presente).
+     */
+    private static String describe(Throwable e) {
+        Throwable root = e;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String message = root.getMessage();
+        return root.getClass().getSimpleName() + (message != null && !message.isBlank() ? ": " + message : "");
     }
 
     /**
@@ -333,10 +374,26 @@ public class SnapshotImportService {
             return false;
         }
         try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPassword)) {
-            if (state.getLastSyncedContentSha256() == null) {
-                return hasUserData(connection);
-            }
-            return !scriptContentSha256(connection).equals(state.getLastSyncedContentSha256());
+            boolean dirty = state.getLastSyncedContentSha256() == null
+                    ? hasUserData(connection)
+                    : !scriptContentSha256(connection).equals(state.getLastSyncedContentSha256());
+            shutdownEngine(connection);
+            return dirty;
+        }
+    }
+
+    /**
+     * Força o encerramento completo do engine H2 antes de a conexão fechar.
+     *
+     * <p>Sem isto, reabrir o MESMO arquivo nesta JVM logo em seguida (como
+     * {@link #importSnapshot} faz, apagando e recriando o arquivo) reaproveita
+     * a instância de {@code Database} que o H2 mantém em cache por processo —
+     * o schema antigo "sobrevive" em memória e o {@code RUNSCRIPT} falha com
+     * "tabela já existe" mesmo num arquivo recém-apagado do disco.</p>
+     */
+    private static void shutdownEngine(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SHUTDOWN");
         }
     }
 

@@ -218,8 +218,20 @@ public class BoardViewController {
             }
             case HASH_MISMATCH -> syncStatusLabel.setText("⚠ Nuvem ainda baixando dados");
             case SKIPPED_DB_IN_USE -> syncStatusLabel.setText("⚠ Banco em uso — sync pulado");
-            case ERROR -> syncStatusLabel.setText("⚠ Erro na sincronização");
+            case ERROR -> {
+                syncStatusLabel.setText("⚠ Erro na sincronização");
+                String detail = org.desviante.sync.SnapshotImportService.getLastStartupErrorDetail();
+                javafx.application.Platform.runLater(() -> showError("Sincronização",
+                        "Não foi possível importar os dados da nuvem no início do aplicativo.\n\n"
+                                + (detail != null ? "Causa: " + detail
+                                        : "Nenhum detalhe adicional foi registrado.")));
+            }
             default -> syncStatusLabel.setText("");
+        }
+
+        String startupErrorDetail = org.desviante.sync.SnapshotImportService.getLastStartupErrorDetail();
+        if (startupErrorDetail != null) {
+            syncStatusLabel.setTooltip(new Tooltip(startupErrorDetail));
         }
 
         // Cópias em conflito criadas pelo próprio provedor de nuvem
